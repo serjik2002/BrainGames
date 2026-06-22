@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="uk" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Brain Games - П'ятнашки</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;800&display=swap');
+
+        :root {
+            --bg-color: #F8F9FA;
+            --text-color: #1C2331;
+            --subtitle-color: #7A8294;
+            --board-bg: #E2E8F0;
+            
+            /* Преміальна сіра палітра для фішок */
+            --tile-bg: #F1F5F9;
+            --tile-text: #475569;
+            --tile-shadow: #CBD5E1;
+
+            --btn-bg: #06D6A0;
+            --btn-shadow: #05B586;
+            --modal-bg: rgba(255, 255, 255, 0.85);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a2e;
+            --text-color: #f1f5f9;
+            --subtitle-color: #94a3b8;
+            --board-bg: #16213e;
+            
+            /* Преміальна темна сіра палітра для фішок */
+            --tile-bg: #334155;
+            --tile-text: #CBD5E1;
+            --tile-shadow: #0F172A;
+
+            --btn-bg: #059669;
+            --btn-shadow: #047857;
+            --modal-bg: rgba(26, 26, 46, 0.85);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none; /* Блокуємо скрол браузера при свайпах */
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100dvh;
+            overflow: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Головний контейнер з ідеальним вписуванням */
+        .app-container {
+            width: 100%;
+            max-width: min(100%, calc(100dvh - 280px)); /* Збільшили запас висоти під кнопку */
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Верхня панель (Тема + Рахунок) */
+        .top-bar {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .theme-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--board-bg);
+            border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 var(--tile-shadow);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        .theme-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 var(--tile-shadow);
+        }
+
+        .score-board {
+            background: var(--board-bg);
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 800;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 0 var(--tile-shadow);
+        }
+
+        /* Заголовок */
+        .header {
+            text-align: center;
+            margin-bottom: 20px; /* Зменшили відступ (було 30px) */
+            width: 100%;
+        }
+
+        .header h1 {
+            font-size: 40px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .header p {
+            font-size: 16px;
+            color: var(--subtitle-color);
+            margin-top: 5px;
+        }
+
+        /* Ігрове поле (Ідеальний квадрат) */
+        .board-wrapper {
+            width: 100%;
+            aspect-ratio: 1;
+            background: var(--board-bg);
+            border-radius: 20px;
+            padding: 8px;
+            box-shadow: inset 0 6px 15px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .board {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Фішки */
+        .tile-container {
+            position: absolute;
+            transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .tile {
+            width: 100%;
+            height: 100%;
+            padding: 4px; /* Це створює відступи (gap) між фішками */
+        }
+
+        .tile-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--tile-text);
+            background: var(--tile-bg);
+            box-shadow: 0 6px 0 var(--tile-shadow);
+            cursor: pointer;
+            transition: filter 0.2s, transform 0.1s;
+        }
+
+        /* Панель керування та кнопка "Нова гра" */
+        .controls {
+            margin-top: 20px; /* Зменшили відступ (було 30px) */
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .restart-btn {
+            background: var(--board-bg);
+            color: var(--text-color);
+            border: none;
+            padding: 12px 30px;
+            font-size: 18px;
+            font-weight: 800;
+            border-radius: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 var(--tile-shadow);
+            transition: transform 0.1s, box-shadow 0.1s;
+            font-family: 'Nunito', sans-serif;
+        }
+
+        .restart-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 var(--tile-shadow);
+        }
+
+        /* Модальне вікно перемоги */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--modal-bg);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background: var(--bg-color);
+            padding: 40px;
+            border-radius: 24px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            transform: translateY(50px);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 90%;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-content h2 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            color: var(--text-color);
+        }
+
+        .modal-content p {
+            color: var(--subtitle-color);
+            margin-bottom: 30px;
+            font-size: 18px;
+        }
+
+        .play-btn {
+            background: var(--btn-bg);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            font-weight: 800;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 var(--btn-shadow);
+            transition: transform 0.1s, box-shadow 0.1s;
+            font-family: 'Nunito', sans-serif;
+        }
+
+        .play-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 var(--btn-shadow);
+        }
+
+        /* Відключення анімації під час перемішування */
+        .no-transition {
+            transition: none !important;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Верхня панель -->
+        <div class="top-bar">
+            <button class="theme-btn" id="themeBtn">🌙</button>
+            <div class="score-board">
+                ⭐ <span id="scoreDisplay">0</span>
+            </div>
+        </div>
+
+        <!-- Заголовок -->
+        <div class="header">
+            <h1 id="title">П'ятнашки</h1>
+            <p id="levelDesc">Розстав цифри по порядку</p>
+        </div>
+
+        <!-- Ігрове поле -->
+        <div class="board-wrapper">
+            <div class="board" id="board"></div>
+        </div>
+
+        <!-- Кнопка нової гри -->
+        <div class="controls">
+            <button class="restart-btn" id="restartBtn">🔄 Нова розкладка</button>
+        </div>
+    </div>
+
+    <!-- Модальне вікно -->
+    <div class="modal-overlay" id="winModal">
+        <div class="modal-content">
+            <h2>Ідеально! 🎉</h2>
+            <p id="modalDesc">Ти зібрав поле.</p>
+            <button class="play-btn" id="nextLevelBtn">Грати ще</button>
+        </div>
+    </div>
+
+    <script>
+        /* --- АУДІО ДВИЖОК --- */
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            if (type === 'click') {
+                // Звук переміщення (короткий глухий клік)
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+                
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'win') {
+                // Звук перемоги (радісний акорд)
+                const now = audioCtx.currentTime;
+                const freqs = [440, 554.37, 659.25, 880]; // A major chord
+                
+                freqs.forEach((freq, i) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.type = 'sine';
+                    o.frequency.value = freq;
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    
+                    g.gain.setValueAtTime(0, now + i * 0.1);
+                    g.gain.linearRampToValueAtTime(0.1, now + i * 0.1 + 0.05);
+                    g.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.4);
+                    
+                    o.start(now + i * 0.1);
+                    o.stop(now + i * 0.1 + 0.5);
+                });
+            }
+        }
+
+        /* --- СИСТЕМА ТЕМ --- */
+        const themeBtn = document.getElementById('themeBtn');
+        let currentTheme = localStorage.getItem('brainGamesTheme') || 'light';
+        
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            themeBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+            localStorage.setItem('brainGamesTheme', theme);
+        }
+        applyTheme(currentTheme);
+
+        themeBtn.addEventListener('pointerdown', () => {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            applyTheme(currentTheme);
+        });
+
+        /* --- ЛОГІКА ГРИ "П'ЯТНАШКИ" --- */
+        const board = document.getElementById('board');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const winModal = document.getElementById('winModal');
+        const nextLevelBtn = document.getElementById('nextLevelBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const levelDesc = document.getElementById('levelDesc');
+        const titleDisplay = document.getElementById('title');
+
+        let gridSize = 4; // Завжди класичні 4x4 (16 клітинок)
+        let score = 0;
+        let tiles = [];
+        let emptyPos = { x: 0, y: 0 };
+        let isLocked = false;
+
+        function initGame() {
+            board.innerHTML = '';
+            tiles = [];
+            isLocked = true; // Блокуємо під час генерації
+            
+            titleDisplay.textContent = `П'ятнашки`;
+            levelDesc.textContent = `Збери від 1 до 15`;
+
+            const totalTiles = gridSize * gridSize;
+            emptyPos = { x: gridSize - 1, y: gridSize - 1 };
+
+            // Створюємо плитки у ВИРІШЕНОМУ стані
+            for (let i = 0; i < totalTiles - 1; i++) {
+                const x = i % gridSize;
+                const y = Math.floor(i / gridSize);
+                
+                const tileContainer = document.createElement('div');
+                tileContainer.className = 'tile-container no-transition';
+                tileContainer.style.width = `${100 / gridSize}%`;
+                tileContainer.style.height = `${100 / gridSize}%`;
+                
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                
+                const inner = document.createElement('div');
+                inner.className = 'tile-inner';
+                inner.textContent = i + 1;
+                
+                tile.appendChild(inner);
+                tileContainer.appendChild(tile);
+                board.appendChild(tileContainer);
+
+                const tileObj = {
+                    element: tileContainer,
+                    id: i + 1,
+                    x: x,
+                    y: y,
+                    correctX: x,
+                    correctY: y
+                };
+
+                // Додаємо подію дотику
+                tileContainer.addEventListener('pointerdown', () => moveTile(tileObj));
+                tiles.push(tileObj);
+                
+                updateTilePosition(tileObj);
+            }
+
+            // Математичне перемішування (тільки легальні ходи)
+            // Це гарантує, що головоломку ЗАВЖДИ можна розв'язати
+            shuffleBoard();
+        }
+
+        function updateTilePosition(tileObj) {
+            tileObj.element.style.transform = `translate(${tileObj.x * 100}%, ${tileObj.y * 100}%)`;
+        }
+
+        function getNeighbors(pos) {
+            const neighbors = [];
+            if (pos.y > 0) neighbors.push({ x: pos.x, y: pos.y - 1 }); // Верх
+            if (pos.y < gridSize - 1) neighbors.push({ x: pos.x, y: pos.y + 1 }); // Низ
+            if (pos.x > 0) neighbors.push({ x: pos.x - 1, y: pos.y }); // Ліво
+            if (pos.x < gridSize - 1) neighbors.push({ x: pos.x + 1, y: pos.y }); // Право
+            return neighbors;
+        }
+
+        async function shuffleBoard() {
+            let prevEmpty = { x: -1, y: -1 };
+            const shuffleMoves = gridSize * gridSize * 10; // Чим більше поле, тим більше ходів для заплутування
+
+            for (let i = 0; i < shuffleMoves; i++) {
+                const neighbors = getNeighbors(emptyPos);
+                // Забороняємо хід назад, щоб не тупцювати на місці
+                const validNeighbors = neighbors.filter(n => !(n.x === prevEmpty.x && n.y === prevEmpty.y));
+                const nextEmpty = validNeighbors[Math.floor(Math.random() * validNeighbors.length)];
+                
+                // Знаходимо плитку, яка стоїть на nextEmpty і рухаємо її на emptyPos
+                const tileToMove = tiles.find(t => t.x === nextEmpty.x && t.y === nextEmpty.y);
+                if (tileToMove) {
+                    tileToMove.x = emptyPos.x;
+                    tileToMove.y = emptyPos.y;
+                    updateTilePosition(tileToMove);
+                }
+                
+                prevEmpty = { ...emptyPos };
+                emptyPos = { ...nextEmpty };
+            }
+
+            // Після перемішування вмикаємо анімації
+            setTimeout(() => {
+                tiles.forEach(t => t.element.classList.remove('no-transition'));
+                isLocked = false;
+            }, 50);
+        }
+
+        function moveTile(tileObj) {
+            if (isLocked) return;
+
+            const dx = Math.abs(tileObj.x - emptyPos.x);
+            const dy = Math.abs(tileObj.y - emptyPos.y);
+
+            // Перевіряємо чи плитка сусідня до порожнього місця (хрестом)
+            if (dx + dy === 1) {
+                playSound('click');
+                
+                // Міняємо місцями
+                const tempX = tileObj.x;
+                const tempY = tileObj.y;
+                
+                tileObj.x = emptyPos.x;
+                tileObj.y = emptyPos.y;
+                
+                emptyPos.x = tempX;
+                emptyPos.y = tempY;
+
+                updateTilePosition(tileObj);
+                
+                checkWin();
+            }
+        }
+
+        function checkWin() {
+            // Порожня клітинка має бути в правому нижньому куті
+            if (emptyPos.x !== gridSize - 1 || emptyPos.y !== gridSize - 1) return;
+
+            // Перевіряємо всі плитки
+            const isWin = tiles.every(t => t.x === t.correctX && t.y === t.correctY);
+
+            if (isWin) {
+                isLocked = true;
+                playSound('win');
+                score += 150;
+                scoreDisplay.textContent = score;
+                
+                // Конфеті
+                confetti({
+                    particleCount: 150,
+                    spread: 80,
+                    origin: { y: 0.6 },
+                    colors: ['#06D6A0', '#FFD166', '#EF476F', '#118AB2']
+                });
+
+                // Показуємо вікно з невеликою затримкою
+                setTimeout(() => {
+                    winModal.classList.add('active');
+                }, 800);
+            }
+        }
+
+        nextLevelBtn.addEventListener('pointerdown', () => {
+            winModal.classList.remove('active');
+            confetti.reset(); // Прибираємо залишки конфеті
+            setTimeout(initGame, 300); // Запускаємо новий рівень після зникнення вікна
+        });
+
+        restartBtn.addEventListener('pointerdown', () => {
+            if (isLocked) return; // Блокуємо кнопку, якщо зараз йде перемішування
+            playSound('click');
+            initGame(); // Запускаємо гру наново
+        });
+
+        // Запуск гри
+        initGame();
+
+    </script>
+</body>
+</html>

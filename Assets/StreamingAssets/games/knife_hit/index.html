@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="uk" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Brain Games - Метання ножів</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap');
+
+        :root {
+            /* Light Theme Colors (Pastel) */
+            --bg-color: #F8F9FA;
+            --text-main: #1C2331;
+            --text-muted: #7A8294;
+            --board-bg: #E8F1F2;
+            --target-base: #FFD166;
+            --target-alt: #F4B942;
+            --knife-color: #9A8C98;
+            --knife-handle: #4A4E69;
+            --btn-bg: #06D6A0;
+            --btn-text: #FFFFFF;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --modal-bg: rgba(255, 255, 255, 0.9);
+            --danger: #EF476F;
+        }
+
+        [data-theme="dark"] {
+            /* Dark Theme Colors */
+            --bg-color: #121212;
+            --text-main: #E0E0E0;
+            --text-muted: #888888;
+            --board-bg: #1E1E24;
+            --target-base: #B58D3D;
+            --target-alt: #9C782D;
+            --knife-color: #726A70;
+            --knife-handle: #2B2D3D;
+            --btn-bg: #05A87D;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --modal-bg: rgba(30, 30, 36, 0.95);
+            --danger: #C0395A;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            min-height: 100dvh;
+            overflow: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Ultimate App Container */
+        .app-container {
+            width: 100%;
+            /* 240px is reserved for header and bottom UI */
+            max-width: min(100%, calc(100dvh - 240px));
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .theme-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--board-bg);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 10px var(--shadow-color);
+            transition: transform 0.2s, background 0.3s;
+        }
+
+        .theme-btn:active {
+            transform: scale(0.9);
+        }
+
+        .theme-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--text-main);
+            transition: fill 0.3s;
+        }
+
+        .title-container {
+            text-align: center;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .level-text {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .score-container {
+            background: var(--board-bg);
+            padding: 10px 20px;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px var(--shadow-color);
+            font-weight: 800;
+            font-size: 18px;
+            transition: background 0.3s;
+        }
+
+        .score-container svg {
+            width: 20px;
+            height: 20px;
+            fill: #FFD166;
+        }
+
+        /* Board */
+        .board-bg {
+            background: var(--board-bg);
+            border-radius: 30px;
+            padding: 15px;
+            box-shadow: 0 10px 30px var(--shadow-color);
+            width: 100%;
+            transition: background 0.3s;
+            position: relative;
+        }
+
+        .board {
+            width: 100%;
+            aspect-ratio: 1;
+            position: relative;
+            overflow: hidden;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        /* Game Elements */
+        .target {
+            position: absolute;
+            top: 35%;
+            left: 50%;
+            width: 45%;
+            aspect-ratio: 1;
+            margin-left: -22.5%;
+            margin-top: -22.5%;
+            border-radius: 50%;
+            background: conic-gradient(
+                var(--target-base) 0deg 90deg, 
+                var(--target-alt) 90deg 180deg, 
+                var(--target-base) 180deg 270deg, 
+                var(--target-alt) 270deg 360deg
+            );
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.1), 0 10px 20px var(--shadow-color);
+            /* Rotation handled by JS */
+            z-index: 2;
+            transition: background 0.3s;
+        }
+
+        /* Wrapper that rotates containing the stuck knives */
+        .target-container {
+            position: absolute;
+            top: 35%;
+            left: 50%;
+            width: 45%;
+            aspect-ratio: 1;
+            margin-left: -22.5%;
+            margin-top: -22.5%;
+            z-index: 1;
+            /* Rotation handled by JS */
+        }
+
+        #top-target-container {
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        .knife {
+            position: absolute;
+            width: 8%;
+            height: 25%;
+            left: 50%;
+            margin-left: -4%;
+            display: flex;
+            justify-content: center;
+            transform-origin: bottom center;
+        }
+
+        .knife svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.2));
+        }
+
+        .knife path.blade { fill: var(--knife-color); transition: fill 0.3s; }
+        .knife path.handle { fill: var(--knife-handle); transition: fill 0.3s; }
+
+        /* The knife waiting to be thrown */
+        #active-knife {
+            bottom: 5%;
+            z-index: 3;
+            transform-origin: bottom center;
+        }
+
+        .stuck-knife-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform-origin: center center;
+        }
+
+        /* Knives stuck in the target */
+        .stuck-knife {
+            bottom: -22%; 
+            width: 18%;
+            height: 55%;
+            margin-left: -9%;
+        }
+        
+        /* Knives counter UI at the bottom */
+        .knives-ui {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+            height: 30px;
+        }
+
+        .knife-icon {
+            width: 12px;
+            height: 30px;
+            opacity: 0.3;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        .knife-icon.active {
+            opacity: 1;
+        }
+        .knife-icon path.blade { fill: var(--knife-color); }
+        .knife-icon path.handle { fill: var(--knife-handle); }
+
+        /* Screen Shake effect */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+        .shake {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        
+        .hit-flash {
+            background-color: var(--danger) !important;
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: var(--modal-bg);
+            padding: 40px;
+            border-radius: 30px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+            transform: translateY(50px);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 90%;
+            width: 320px;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-title {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .modal-text {
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .btn {
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: 700;
+            border-radius: 20px;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 10px 20px rgba(6, 214, 160, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 5px 10px rgba(6, 214, 160, 0.2);
+        }
+        
+        .btn.btn-danger {
+            background: var(--danger);
+            box-shadow: 0 10px 20px rgba(239, 71, 111, 0.3);
+        }
+
+    </style>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <button class="theme-btn" id="theme-toggle">
+                <!-- Sun Icon default -->
+                <svg viewBox="0 0 24 24" id="theme-icon">
+                    <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
+                </svg>
+            </button>
+            <div class="title-container">
+                <div class="title">Ножі</div>
+                <div class="level-text" id="level-display">Рівень 1</div>
+            </div>
+            <div class="score-container">
+                <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                <span id="score-display">0</span>
+            </div>
+        </div>
+
+        <!-- Game Board -->
+        <div class="board-bg" id="board-container">
+            <div class="board" id="game-board">
+                <!-- Visual Target -->
+                <div class="target" id="target"></div>
+                <!-- Container for stuck knives (rotates with target) -->
+                <div class="target-container" id="target-container"></div>
+                <div class="target-container top-layer" id="top-target-container"></div>
+                
+                <!-- The Active Knife -->
+                <div class="knife" id="active-knife">
+                    <!-- SVG Definition for Knife -->
+                    <svg viewBox="0 0 20 80" preserveAspectRatio="none">
+                        <path class="blade" d="M10 0 L16 30 L14 50 L6 50 L4 30 Z" />
+                        <path class="handle" d="M7 50 H13 V75 C13 78 11 80 10 80 C9 80 7 78 7 75 Z" />
+                        <rect class="handle" x="4" y="48" width="12" height="4" rx="2" />
+                    </svg>
+                </div>
+            </div>
+            
+            <!-- Knives Left UI -->
+            <div class="knives-ui" id="knives-ui">
+                <!-- Generated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <div class="modal-title" id="modal-title">Перемога!</div>
+            <div class="modal-text" id="modal-desc">Рівень пройдено</div>
+            <button class="btn" id="modal-btn">Далі</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Theme System ---
+        const themeBtn = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const htmlElement = document.documentElement;
+        
+        const sunPath = "M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z";
+        const moonPath = "M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z";
+
+        let currentTheme = localStorage.getItem('theme') || 'light';
+        setTheme(currentTheme);
+
+        themeBtn.addEventListener('click', () => {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            setTheme(currentTheme);
+            localStorage.setItem('theme', currentTheme);
+        });
+
+        function setTheme(theme) {
+            htmlElement.setAttribute('data-theme', theme);
+            themeIcon.innerHTML = `<path d="${theme === 'light' ? sunPath : moonPath}" />`;
+        }
+
+        // --- Audio Engine (Web Audio API) ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'throw') {
+                // Short swish
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.3, now + 0.05);
+                gain.gain.linearRampToValueAtTime(0, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'hit') {
+                // Wood thud
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+                gain.gain.setValueAtTime(0.5, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'clash') {
+                // Metal clash (game over)
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(200, now + 0.3);
+                gain.gain.setValueAtTime(0.6, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'win') {
+                // Arpeggio
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0.3, now);
+                osc.frequency.setValueAtTime(440, now); // A4
+                osc.frequency.setValueAtTime(554.37, now + 0.1); // C#5
+                osc.frequency.setValueAtTime(659.25, now + 0.2); // E5
+                osc.frequency.setValueAtTime(880, now + 0.3); // A5
+                gain.gain.linearRampToValueAtTime(0, now + 0.6);
+                osc.start(now);
+                osc.stop(now + 0.6);
+            }
+        }
+
+        // --- Game Variables & DOM ---
+        const board = document.getElementById('game-board');
+        const boardContainer = document.getElementById('board-container');
+        const target = document.getElementById('target');
+        const targetContainer = document.getElementById('target-container');
+        const topTargetContainer = document.getElementById('top-target-container');
+        const activeKnife = document.getElementById('active-knife');
+        const knivesUI = document.getElementById('knives-ui');
+        const scoreDisplay = document.getElementById('score-display');
+        const levelDisplay = document.getElementById('level-display');
+        
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDesc = document.getElementById('modal-desc');
+        const modalBtn = document.getElementById('modal-btn');
+
+        let level = 1;
+        let score = 0;
+        let knivesTotal = 5;
+        let knivesLeft = 5;
+        
+        // Physics / Logic
+        let targetAngle = 0;
+        let baseSpeed = 1.5;
+        let currentSpeed = 1.5;
+        let isThrowing = false;
+        let isGameOver = false;
+        let stuckKnivesAngles = []; // Angles where knives are already stuck
+        const KNIFE_SAFE_MARGIN = 14; // Degrees margin for collision
+
+        // SVG String for stuck knives and UI
+        const knifeSVG = `
+            <svg viewBox="0 0 20 80" preserveAspectRatio="none">
+                <path class="blade" d="M10 0 L16 30 L14 50 L6 50 L4 30 Z" />
+                <path class="handle" d="M7 50 H13 V75 C13 78 11 80 10 80 C9 80 7 78 7 75 Z" />
+                <rect class="handle" x="4" y="48" width="12" height="4" rx="2" />
+            </svg>
+        `;
+
+        // --- Game Logic ---
+
+        function initLevel() {
+            isGameOver = false;
+            isThrowing = false;
+            stuckKnivesAngles = [];
+            targetContainer.innerHTML = ''; // clear stuck knives
+            if(topTargetContainer) topTargetContainer.innerHTML = '';
+            
+            // Initial knife spawn with scale animation
+            activeKnife.style.transition = 'none';
+            activeKnife.style.display = 'flex';
+            activeKnife.style.bottom = '5%';
+            activeKnife.style.opacity = '1';
+            activeKnife.style.transform = 'scale(0)';
+            
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    activeKnife.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                    activeKnife.style.transform = 'scale(1)';
+                });
+            });
+
+            // Level dynamics
+            knivesTotal = Math.min(5 + Math.floor(level / 2), 12); // Max 12 knives
+            knivesLeft = knivesTotal;
+            baseSpeed = 1 + (level * 0.2); // Speed increases
+            if(baseSpeed > 4) baseSpeed = 4;
+            currentSpeed = baseSpeed;
+
+            levelDisplay.innerText = `Рівень ${level}`;
+            updateKnivesUI();
+
+            // Add obstacles for higher levels
+            if (level > 1) {
+                let obstacles = Math.min(Math.floor(level / 2), 4);
+                for(let i=0; i<obstacles; i++) {
+                    let randAngle = Math.random() * 360;
+                    // Ensure obstacles aren't too close to each other
+                    let safe = true;
+                    for(let a of stuckKnivesAngles) {
+                        if (getAngleDiff(randAngle, a) < KNIFE_SAFE_MARGIN * 1.5) safe = false;
+                    }
+                    if(safe) {
+                        stuckKnivesAngles.push(randAngle);
+                        renderStuckKnife(randAngle, true); // Obstacles spawn instantly
+                    }
+                }
+            }
+        }
+
+        function updateKnivesUI() {
+            knivesUI.innerHTML = '';
+            for(let i = 0; i < knivesTotal; i++) {
+                let div = document.createElement('div');
+                div.className = `knife-icon ${i < knivesLeft ? 'active' : ''}`;
+                div.innerHTML = knifeSVG;
+                knivesUI.appendChild(div);
+            }
+        }
+
+        // Calculate shortest difference between two angles
+        function getAngleDiff(a, b) {
+            let diff = Math.abs(a - b) % 360;
+            return diff > 180 ? 360 - diff : diff;
+        }
+
+        function renderStuckKnife(angle, instant = false) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'stuck-knife-wrapper';
+            wrapper.style.transform = `rotate(${angle}deg)`;
+
+            const knife = document.createElement('div');
+            knife.className = 'knife stuck-knife';
+            knife.innerHTML = knifeSVG;
+            
+            wrapper.appendChild(knife);
+            
+            if (instant) {
+                targetContainer.appendChild(wrapper);
+            } else {
+                // Spawn on top layer for a seamless stick effect (no blinking)
+                topTargetContainer.appendChild(wrapper);
+                setTimeout(() => {
+                    if (wrapper.parentElement === topTargetContainer) {
+                        targetContainer.appendChild(wrapper);
+                    }
+                }, 40); // Move under the log after 40ms
+            }
+        }
+
+        function throwKnife() {
+            if (isThrowing || isGameOver) return;
+            initAudio(); // Ensure audio context is awake
+
+            isThrowing = true;
+            playSound('throw');
+
+            // Fast, linear throw animation
+            activeKnife.style.transition = 'bottom 0.08s linear';
+            activeKnife.style.bottom = '35%'; // Moves to target
+            
+            setTimeout(() => {
+                // Calculate impact
+                let impactAngle = (360 - (targetAngle % 360)) % 360;
+
+                // Check collisions
+                let hit = false;
+                for(let stuckAngle of stuckKnivesAngles) {
+                    if (getAngleDiff(impactAngle, stuckAngle) < KNIFE_SAFE_MARGIN) {
+                        hit = true;
+                        break;
+                    }
+                }
+
+                if (hit) {
+                    // Game Over
+                    isGameOver = true;
+                    playSound('clash');
+                    boardContainer.classList.add('shake', 'hit-flash');
+                    
+                    activeKnife.style.transition = 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                    activeKnife.style.bottom = '20%'; // bounce off a bit
+                    activeKnife.style.transform = 'rotate(45deg) translateY(20px)';
+                    activeKnife.style.opacity = '0';
+                    
+                    setTimeout(() => {
+                        boardContainer.classList.remove('shake', 'hit-flash');
+                        showModal('Програш', `Ви влучили в інший ніж.<br>Очки: ${score}`, 'Спробувати знову', false);
+                    }, 500);
+
+                } else {
+                    // Success
+                    playSound('hit');
+                    score += 10;
+                    scoreDisplay.innerText = score;
+                    knivesLeft--;
+                    updateKnivesUI();
+                    
+                    // Add to stuck
+                    stuckKnivesAngles.push(impactAngle);
+                    renderStuckKnife(impactAngle, false);
+
+                    // Reset active knife instantly to bottom, scaled down (0)
+                    activeKnife.style.transition = 'none';
+                    activeKnife.style.bottom = '5%';
+                    activeKnife.style.transform = 'scale(0)';
+                    
+                    if (knivesLeft <= 0) {
+                        // Level Complete
+                        isGameOver = true;
+                        playSound('win');
+                        confetti({
+                            particleCount: 100,
+                            spread: 70,
+                            origin: { y: 0.6 },
+                            colors: ['#06D6A0', '#FFD166', '#EF476F']
+                        });
+                        setTimeout(() => {
+                            showModal('Чудово!', `Рівень ${level} пройдено!`, 'Наступний рівень', true);
+                        }, 500);
+                    } else {
+                        // Pop in next knife by scaling up
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(() => {
+                                activeKnife.style.transition = 'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                                activeKnife.style.transform = 'scale(1)';
+                                
+                                setTimeout(() => {
+                                    isThrowing = false;
+                                }, 200);
+                            });
+                        });
+                    }
+                }
+            }, 80); // Matches CSS transition duration
+        }
+
+        // --- Game Loop (Rotation) ---
+        let lastTime = 0;
+        let directionTimer = 0;
+
+        function gameLoop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const delta = timestamp - lastTime;
+            lastTime = timestamp;
+
+            if (!isGameOver) {
+                // Dynamic logic based on level
+                if (level >= 3) {
+                    directionTimer += delta;
+                    // Change direction randomly every 2-4 seconds
+                    if (directionTimer > 2000 + Math.random() * 2000) {
+                        baseSpeed = -baseSpeed;
+                        directionTimer = 0;
+                    }
+                    
+                    // Add easing/oscillating speed on level 4+
+                    if(level >= 4) {
+                        currentSpeed = baseSpeed + Math.sin(timestamp / 500) * (Math.abs(baseSpeed) * 0.5);
+                    } else {
+                        currentSpeed = baseSpeed;
+                    }
+                }
+
+                targetAngle = (targetAngle + currentSpeed) % 360;
+                
+                // Apply rotation
+                target.style.transform = `rotate(${targetAngle}deg)`;
+                targetContainer.style.transform = `rotate(${targetAngle}deg)`;
+                if(topTargetContainer) topTargetContainer.style.transform = `rotate(${targetAngle}deg)`;
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- Interactions ---
+        board.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            throwKnife();
+        });
+
+        // --- Modal Logic ---
+        let isWinModal = false;
+        
+        function showModal(title, desc, btnText, isWin) {
+            isWinModal = isWin;
+            modalTitle.innerText = title;
+            modalDesc.innerHTML = desc;
+            modalBtn.innerText = btnText;
+            
+            if(!isWin) {
+                modalBtn.classList.add('btn-danger');
+            } else {
+                modalBtn.classList.remove('btn-danger');
+            }
+
+            modal.classList.add('active');
+        }
+
+        modalBtn.addEventListener('click', () => {
+            modal.classList.remove('active');
+            playSound('throw');
+            if (isWinModal) {
+                level++;
+            } else {
+                level = 1;
+                score = 0;
+                scoreDisplay.innerText = score;
+            }
+            // Reset active knife styling before next level
+            activeKnife.style.transform = 'none';
+            initLevel();
+        });
+
+        // Start
+        initLevel();
+        requestAnimationFrame(gameLoop);
+
+    </script>
+</body>
+</html>

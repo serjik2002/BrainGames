@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Патчи - Головоломка</title>
+    <style>
+        :root {
+            --bg-color: #f3f2ef;
+            --surface-color: #ffffff;
+            --text-main: #191919;
+            --text-muted: #666666;
+            --border-light: #e0e0e0;
+            --border-dark: #8c8c8c;
+            --primary: #0a66c2;
+            --primary-hover: #004182;
+            --success: #057642;
+            --error: #cc1016;
+            --cell-size: clamp(40px, 12vw, 60px);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px 10px;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            touch-action: none;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 { margin: 0 0 5px 0; font-size: 26px; color: var(--primary); }
+        .controls-top { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
+
+        button, select {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--border-dark);
+            background: var(--surface-color);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            color: var(--text-main);
+        }
+
+        button:hover { background: var(--border-light); }
+        button.primary { background: var(--primary); color: white; border-color: var(--primary); }
+        button.primary:hover { background: var(--primary-hover); }
+
+        .board-wrapper {
+            background: var(--surface-color);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+            border: 1px solid var(--border-light);
+        }
+
+        .board {
+            display: grid;
+            gap: 0;
+            border: 2px solid var(--border-light);
+            background-color: var(--border-light);
+            touch-action: none;
+            position: relative;
+        }
+
+        .cell {
+            width: var(--cell-size);
+            height: var(--cell-size);
+            background-color: var(--surface-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            cursor: pointer;
+            border: 1px dashed var(--border-light);
+        }
+
+        /* Границы для готовых регионов и превью */
+        .cell.region-top { border-top: 2px solid rgba(0,0,0,0.3) !important; }
+        .cell.region-bottom { border-bottom: 2px solid rgba(0,0,0,0.3) !important; }
+        .cell.region-left { border-left: 2px solid rgba(0,0,0,0.3) !important; }
+        .cell.region-right { border-right: 2px solid rgba(0,0,0,0.3) !important; }
+        
+        .cell.preview-invalid {
+            background-color: rgba(200, 200, 200, 0.5) !important;
+        }
+
+        .cell.error {
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(204,16,22,0.15) 10px, rgba(204,16,22,0.15) 20px);
+        }
+
+        .hint-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 700;
+            font-size: calc(var(--cell-size) * 0.35);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .icon-square { width: 55%; height: 55%; border-radius: 4px; color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+        .icon-wide { width: 75%; height: 45%; border-radius: 4px; color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+        .icon-tall { width: 45%; height: 75%; border-radius: 4px; color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+        .icon-any {
+            width: 60%; height: 60%; 
+            border-radius: 6px; 
+            border: 2px dashed; 
+            background-color: rgba(255,255,255,0.6);
+        }
+
+        .legend {
+            background: var(--surface-color);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            max-width: 500px;
+            width: 100%;
+            margin-bottom: 20px;
+            font-size: 13px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .legend-title { text-align: center; font-weight: 600; margin-bottom: 10px; }
+        .legend-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .legend-item { display: flex; align-items: center; gap: 10px; }
+        .legend-icon-container { width: 30px; height: 30px; display: flex; justify-content: center; align-items: center; }
+        .legend-note { text-align: center; color: var(--text-muted); font-size: 12px; }
+
+        .message {
+            font-weight: 600;
+            font-size: 16px;
+            min-height: 24px;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .text-success { color: var(--success); }
+        .text-error { color: var(--error); }
+
+        @keyframes winPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); box-shadow: 0 0 20px var(--success); }
+            100% { transform: scale(1); }
+        }
+        .win-animation { animation: winPulse 0.6s ease-out; border-color: var(--success); }
+
+        /* Стили для подсказки размера */
+        .size-tooltip {
+            position: fixed;
+            pointer-events: none;
+            background: rgba(25, 25, 25, 0.9);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            z-index: 1000;
+            display: none;
+            transform: translate(-50%, -150%); /* Смещение вверх, чтобы не закрывать пальцем */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            white-space: nowrap;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Патчи</h1>
+        <div class="controls-top">
+            <select id="difficulty">
+                <option value="gen_easy" selected>Случайный Легкий</option>
+                <option value="gen_medium">Случайный Средний</option>
+            </select>
+            <button class="primary" onclick="initGame()">Новая игра</button>
+        </div>
+    </header>
+
+    <div class="board-wrapper" id="board-wrapper">
+        <div class="board" id="board"></div>
+    </div>
+
+    <div class="controls-top" style="margin-top: 0; margin-bottom: 20px;">
+        <button onclick="resetBoard()">Очистить</button>
+        <button onclick="checkSolution(false)">Проверить</button>
+    </div>
+
+    <div class="legend">
+        <div class="legend-title">Расположите каждую фигуру так, чтобы заполнить сетку</div>
+        <div class="legend-grid">
+            <div class="legend-item">
+                <div class="legend-icon-container"><div class="hint-icon icon-square" style="background:#8c8c8c;"></div></div>
+                <span>Квадрат</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon-container"><div class="hint-icon icon-tall" style="background:#8c8c8c;"></div></div>
+                <span>Высокий прямоугольник</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon-container"><div class="hint-icon icon-wide" style="background:#8c8c8c;"></div></div>
+                <span>Широкий прямоугольник</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon-container"><div class="hint-icon icon-any" style="border-color:#8c8c8c; background: rgba(140,140,140,0.3);"></div></div>
+                <span>Любой из них</span>
+            </div>
+        </div>
+        <div class="legend-note">Если фигура содержит число, ее площадь должна быть равна этому числу.</div>
+    </div>
+
+    <div class="message" id="message"></div>
+    <div id="size-tooltip" class="size-tooltip"></div>
+    <canvas id="confetti" style="position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999;"></canvas>
+
+    <script>
+        const PALETTE = [
+            '#34a853', '#fbbc04', '#ea4335', '#12B5CB', 
+            '#7baaf7', '#9334e6', '#f29900', '#f06292', 
+            '#9aa0a6', '#4285f4', '#188038', '#c2185b'
+        ];
+
+        let currentLevel = null;
+        let regions = {}; // Объект для хранения координат прямоугольников {id: {minX, maxX, minY, maxY}}
+        let uiCells = [];
+        
+        // Состояние рисования
+        let isDragging = false;
+        let dragStart = null;
+        let dragCurrent = null;
+        let isLevelComplete = false;
+        let winTimeout = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initGame();
+            setupInputHandlers();
+            initConfettiCanvas();
+            window.addEventListener('resize', initConfettiCanvas);
+        });
+
+        function initConfettiCanvas() {
+            const canvas = document.getElementById('confetti');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function initGame() {
+            if (winTimeout) {
+                clearTimeout(winTimeout);
+                winTimeout = null;
+            }
+            isLevelComplete = false;
+
+            const diff = document.getElementById('difficulty').value;
+            currentLevel = generateRandomLevel(diff === 'gen_easy' ? 6 : 8);
+            
+            // Инициализация пустых регионов (изначально поле не окрашено)
+            regions = {};
+
+            createBoardUI();
+            updateValidation();
+            showMessage('Тяните прямоугольники, чтобы заполнить поле', '');
+            document.getElementById('board-wrapper').classList.remove('win-animation');
+        }
+
+        function createBoardUI() {
+            const boardEl = document.getElementById('board');
+            boardEl.style.gridTemplateColumns = `repeat(${currentLevel.size}, 1fr)`;
+            boardEl.innerHTML = '';
+            uiCells = [];
+
+            for (let y = 0; y < currentLevel.size; y++) {
+                for (let x = 0; x < currentLevel.size; x++) {
+                    const idx = y * currentLevel.size + x;
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.index = idx;
+                    
+                    const hint = currentLevel.hints.find(h => h.x === x && h.y === y);
+                    if (hint) {
+                        const icon = document.createElement('div');
+                        icon.className = `hint-icon icon-${hint.type}`;
+                        
+                        if (hint.type === 'any') {
+                            icon.style.borderColor = hint.color;
+                            icon.style.color = '#191919';
+                            let hex = hint.color.replace('#', '');
+                            let r = parseInt(hex.substring(0,2), 16);
+                            let g = parseInt(hex.substring(2,4), 16);
+                            let b = parseInt(hex.substring(4,6), 16);
+                            icon.style.backgroundColor = `rgba(${r},${g},${b},0.3)`;
+                        } else {
+                            icon.style.backgroundColor = hint.color;
+                        }
+                        
+                        if (hint.number !== null) {
+                            icon.textContent = hint.number;
+                        }
+                        cell.appendChild(icon);
+                    }
+
+                    boardEl.appendChild(cell);
+                    uiCells.push(cell);
+                }
+            }
+            renderGrid();
+        }
+
+        function getCellCoords(e) {
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            let el = document.elementFromPoint(clientX, clientY);
+            let cell = el ? el.closest('.cell') : null;
+            if (cell) {
+                let idx = parseInt(cell.dataset.index);
+                return { x: idx % currentLevel.size, y: Math.floor(idx / currentLevel.size) };
+            }
+            return null;
+        }
+
+        function setupInputHandlers() {
+            const boardEl = document.getElementById('board');
+            const tooltip = document.getElementById('size-tooltip');
+            
+            const startDraw = (e) => {
+                if (isLevelComplete) return;
+                let coords = getCellCoords(e);
+                if (!coords) return;
+                e.preventDefault();
+
+                isDragging = true;
+                dragStart = coords;
+                dragCurrent = coords;
+                renderGrid();
+                
+                let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                tooltip.style.left = clientX + 'px';
+                tooltip.style.top = clientY + 'px';
+                tooltip.textContent = `1×1 = 1`;
+                tooltip.style.display = 'block';
+            };
+
+            const moveDraw = (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                
+                let coords = getCellCoords(e);
+                
+                // Обновляем позицию тултипа вслед за курсором/пальцем
+                let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                tooltip.style.left = clientX + 'px';
+                tooltip.style.top = clientY + 'px';
+
+                if (coords) {
+                    let w = Math.abs(coords.x - dragStart.x) + 1;
+                    let h = Math.abs(coords.y - dragStart.y) + 1;
+                    tooltip.textContent = `${w}×${h} = ${w*h}`;
+                    
+                    if (coords.x !== dragCurrent.x || coords.y !== dragCurrent.y) {
+                        dragCurrent = coords;
+                        renderGrid();
+                    }
+                }
+            };
+
+            const endDraw = (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                tooltip.style.display = 'none';
+                
+                let isClick = (dragStart.x === dragCurrent.x && dragStart.y === dragCurrent.y);
+
+                if (isClick) {
+                    // Обработка простого клика: удаление региона
+                    let clickedId = getRegionIdAt(dragStart.x, dragStart.y);
+                    if (clickedId !== -1) {
+                        delete regions[clickedId];
+                    }
+                } else {
+                    // Обработка растягивания: сохранение прямоугольника
+                    let minX = Math.min(dragStart.x, dragCurrent.x);
+                    let maxX = Math.max(dragStart.x, dragCurrent.x);
+                    let minY = Math.min(dragStart.y, dragCurrent.y);
+                    let maxY = Math.max(dragStart.y, dragCurrent.y);
+                    
+                    let anchorsInside = currentLevel.hints.filter(h => 
+                        h.x >= minX && h.x <= maxX && h.y >= minY && h.y <= maxY
+                    );
+
+                    // Разрешаем применение, только если внутри ровно 1 иконка
+                    if (anchorsInside.length === 1) {
+                        let targetId = anchorsInside[0].id;
+                        let proposedRect = { minX, maxX, minY, maxY };
+                        
+                        // Запрещаем пересечение с другими уже нарисованными фигурами
+                        let overlaps = false;
+                        for (let otherId in regions) {
+                            if (parseInt(otherId) !== targetId) {
+                                if (rectsIntersect(proposedRect, regions[otherId])) {
+                                    overlaps = true;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (!overlaps) {
+                            regions[targetId] = proposedRect;
+                        }
+                    }
+                }
+                
+                dragStart = null;
+                dragCurrent = null;
+                renderGrid();
+                updateValidation();
+            };
+
+            boardEl.addEventListener('mousedown', startDraw);
+            document.addEventListener('mousemove', moveDraw);
+            document.addEventListener('mouseup', endDraw);
+
+            boardEl.addEventListener('touchstart', startDraw, {passive: false});
+            document.addEventListener('touchmove', moveDraw, {passive: false});
+            document.addEventListener('touchend', endDraw);
+        }
+
+        function rectsIntersect(r1, r2) {
+            return !(r2.minX > r1.maxX || r2.maxX < r1.minX || r2.minY > r1.maxY || r2.maxY < r1.minY);
+        }
+
+        function getRegionIdAt(x, y) {
+            for (let id in regions) {
+                let r = regions[id];
+                if (x >= r.minX && x <= r.maxX && y >= r.minY && y <= r.maxY) {
+                    return parseInt(id);
+                }
+            }
+            return -1;
+        }
+
+        function renderGrid() {
+            const sz = currentLevel.size;
+            let visualGrid = new Array(sz * sz).fill(-1);
+            
+            // 1. Применяем существующие регионы
+            for (let id in regions) {
+                let r = regions[id];
+                for (let y = r.minY; y <= r.maxY; y++) {
+                    for (let x = r.minX; x <= r.maxX; x++) {
+                        visualGrid[y * sz + x] = parseInt(id);
+                    }
+                }
+            }
+
+            // 2. Накладываем превью, если идет рисование
+            let previewId = null;
+            let previewValid = false;
+            
+            if (isDragging && dragStart && dragCurrent) {
+                let minX = Math.min(dragStart.x, dragCurrent.x);
+                let maxX = Math.max(dragStart.x, dragCurrent.x);
+                let minY = Math.min(dragStart.y, dragCurrent.y);
+                let maxY = Math.max(dragStart.y, dragCurrent.y);
+                
+                let anchorsInside = currentLevel.hints.filter(h => 
+                    h.x >= minX && h.x <= maxX && h.y >= minY && h.y <= maxY
+                );
+
+                if (anchorsInside.length === 1) {
+                    previewId = anchorsInside[0].id;
+                    previewValid = true;
+                    
+                    // Запрет на пересечение превью с другими фигурами
+                    for (let id in regions) {
+                        if (parseInt(id) !== previewId) {
+                            if (rectsIntersect({minX, maxX, minY, maxY}, regions[id])) {
+                                previewValid = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                // Перезаписываем visualGrid зоной превью
+                for (let y = minY; y <= maxY; y++) {
+                    for (let x = minX; x <= maxX; x++) {
+                        visualGrid[y * sz + x] = previewValid ? `preview-${previewId}` : 'invalid';
+                    }
+                }
+            }
+
+            // 3. Обновляем DOM и границы
+            for (let i = 0; i < visualGrid.length; i++) {
+                let cell = uiCells[i];
+                let val = visualGrid[i];
+                let x = i % sz;
+                let y = Math.floor(i / sz);
+
+                cell.className = 'cell'; // Сброс классов
+                cell.style.backgroundColor = 'var(--surface-color)';
+                
+                if (val === 'invalid') {
+                    cell.classList.add('preview-invalid');
+                } else if (val !== -1) {
+                    // Валидное превью или сохраненный регион
+                    let id = typeof val === 'string' ? parseInt(val.split('-')[1]) : val;
+                    let isPreview = typeof val === 'string';
+                    
+                    let hint = currentLevel.hints.find(h => h.id === id);
+                    if (hint) {
+                        let hex = hint.color.replace('#', '');
+                        let r = parseInt(hex.substring(0,2), 16);
+                        let g = parseInt(hex.substring(2,4), 16);
+                        let b = parseInt(hex.substring(4,6), 16);
+                        cell.style.backgroundColor = `rgba(${r},${g},${b},${isPreview ? 0.6 : 0.4})`;
+                    }
+
+                    // Отрисовка внешних границ группы
+                    if (y === 0 || visualGrid[(y-1)*sz + x] !== val) cell.classList.add('region-top');
+                    if (y === sz-1 || visualGrid[(y+1)*sz + x] !== val) cell.classList.add('region-bottom');
+                    if (x === 0 || visualGrid[y*sz + (x-1)] !== val) cell.classList.add('region-left');
+                    if (x === sz-1 || visualGrid[y*sz + (x+1)] !== val) cell.classList.add('region-right');
+                }
+            }
+        }
+
+        function resetBoard() {
+            regions = {};
+            renderGrid();
+            updateValidation();
+            showMessage('Поле очищено.', '');
+        }
+
+        function updateValidation(skipAutoCheck = false) {
+            uiCells.forEach(c => c.classList.remove('error'));
+            
+            let hasErrors = false;
+            let filledArea = 0;
+            const sz = currentLevel.size;
+            
+            for (let id in regions) {
+                let r = regions[id];
+                let hint = currentLevel.hints.find(h => h.id == id);
+                let w = r.maxX - r.minX + 1;
+                let h = r.maxY - r.minY + 1;
+                let area = w * h;
+                
+                let isError = false;
+                
+                // Ошибки по правилам проверяются сразу для всех нарисованных регионов
+                if (hint.number !== null && area !== hint.number) isError = true;
+                if (hint.type === 'square' && w !== h) isError = true;
+                if (hint.type === 'wide' && w <= h) isError = true;
+                if (hint.type === 'tall' && h <= w) isError = true;
+
+                if (isError) {
+                    hasErrors = true;
+                    for (let y = r.minY; y <= r.maxY; y++) {
+                        for (let x = r.minX; x <= r.maxX; x++) {
+                            uiCells[y * sz + x].classList.add('error');
+                        }
+                    }
+                }
+                
+                filledArea += area;
+            }
+
+            // Автоматическая проверка победы
+            if (!hasErrors && filledArea === sz * sz && !skipAutoCheck) {
+                checkSolution(true);
+            }
+        }
+
+        function checkSolution(isAuto = false) {
+            updateValidation(true);
+            
+            let filledArea = 0;
+            for (let id in regions) {
+                filledArea += (regions[id].maxX - regions[id].minX + 1) * (regions[id].maxY - regions[id].minY + 1);
+            }
+
+            if (filledArea < currentLevel.size * currentLevel.size) {
+                if (!isAuto) showMessage('Заполните все пустые клетки!', 'text-error');
+                return;
+            }
+            
+            let hasErrors = uiCells.some(c => c.classList.contains('error'));
+            
+            if (hasErrors) {
+                if (!isAuto) showMessage('Есть ошибки в форме или размере регионов.', 'text-error');
+            } else {
+                isLevelComplete = true;
+                showMessage('Идеально! Головоломка решена.', 'text-success');
+                document.getElementById('board-wrapper').classList.add('win-animation');
+                
+                shootConfetti();
+                winTimeout = setTimeout(() => {
+                    initGame();
+                }, 3500); // Запуск нового уровня через 3.5 секунды
+            }
+        }
+
+        let confettiActive = false;
+        let animationFrameId = null;
+        
+        function shootConfetti() {
+            const canvas = document.getElementById('confetti');
+            const ctx = canvas.getContext('2d');
+            confettiActive = true;
+            let particles = [];
+            const board = document.getElementById('board-wrapper');
+            const rect = board.getBoundingClientRect();
+            const startX = rect.left + rect.width / 2;
+            const startY = rect.top + rect.height / 2;
+
+            for (let i = 0; i < 150; i++) {
+                particles.push({
+                    x: startX,
+                    y: startY,
+                    vx: (Math.random() - 0.5) * 15, // Снижена начальная горизонтальная скорость
+                    vy: (Math.random() - 1) * 18 - 5, // Снижена начальная вертикальная скорость
+                    size: Math.random() * 8 + 6,
+                    color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
+                    rot: Math.random() * 360,
+                    rotSpeed: (Math.random() - 0.5) * 8, // Более плавное вращение
+                    type: Math.random() > 0.5 ? 'rect' : 'circle'
+                });
+            }
+
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            
+            function update() {
+                if (!confettiActive) return;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let active = false;
+                
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.15; // Значительно уменьшена гравитация (было 0.5)
+                    
+                    // Добавлено сопротивление воздуха (замедление)
+                    p.vx *= 0.99;
+                    p.vy *= 0.99;
+
+                    p.rot += p.rotSpeed;
+                    
+                    if (p.y < canvas.height + 20) active = true;
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rot * Math.PI / 180);
+                    ctx.fillStyle = p.color;
+                    if (p.type === 'rect') {
+                        ctx.fillRect(-p.size / 2, -p.size, p.size, p.size * 2);
+                    } else {
+                        ctx.beginPath();
+                        ctx.arc(0, 0, p.size/2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                });
+
+                if (active) {
+                    animationFrameId = requestAnimationFrame(update);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+            update();
+        }
+
+        function generateRandomLevel(size) {
+            let rects = [{x: 0, y: 0, w: size, h: size}];
+            let targetRegions = size === 6 ? 10 : 16;
+            
+            let attempts = 0;
+            while(rects.length < targetRegions && attempts < 200) {
+                attempts++;
+                
+                // Находим прямоугольники, которые можно разделить
+                // Сначала пытаемся избежать слишком длинных фигур (длина > 4)
+                let splittable = rects.map((r, i) => {
+                    let validVert = [];
+                    for(let sx=1; sx<r.w; sx++) {
+                        let w1 = sx, w2 = r.w - sx;
+                        if (w1 * r.h >= 2 && w2 * r.h >= 2) {
+                            if (Math.max(w1, r.h) <= 4 && Math.max(w2, r.h) <= 4) { 
+                                validVert.push(sx);
+                            }
+                        }
+                    }
+                    let validHoriz = [];
+                    for(let sy=1; sy<r.h; sy++) {
+                        let h1 = sy, h2 = r.h - sy;
+                        if (r.w * h1 >= 2 && r.w * h2 >= 2) {
+                            if (Math.max(r.w, h1) <= 4 && Math.max(r.w, h2) <= 4) {
+                                validHoriz.push(sy);
+                            }
+                        }
+                    }
+                    return {i, r, validVert, validHoriz};
+                }).filter(item => item.validVert.length > 0 || item.validHoriz.length > 0);
+
+                // Если по жестким правилам делить нечего, ослабляем их (просто площадь >= 2)
+                if (splittable.length === 0) {
+                     splittable = rects.map((r, i) => {
+                        let validVert = [];
+                        for(let sx=1; sx<r.w; sx++) {
+                            if (sx * r.h >= 2 && (r.w - sx) * r.h >= 2) validVert.push(sx);
+                        }
+                        let validHoriz = [];
+                        for(let sy=1; sy<r.h; sy++) {
+                            if (r.w * sy >= 2 && r.w * (r.h - sy) >= 2) validHoriz.push(sy);
+                        }
+                        return {i, r, validVert, validHoriz};
+                    }).filter(item => item.validVert.length > 0 || item.validHoriz.length > 0);
+                }
+
+                if (splittable.length === 0) break;
+
+                // Сортируем, чтобы чаще делить большие прямоугольники (более равномерная сетка)
+                splittable.sort((a, b) => (b.r.w * b.r.h) - (a.r.w * a.r.h));
+                let poolSize = Math.max(1, Math.ceil(splittable.length / 2));
+                let chosen = splittable[Math.floor(Math.random() * poolSize)];
+                let r = chosen.r;
+
+                let doVert = false;
+                if (chosen.validVert.length > 0 && chosen.validHoriz.length > 0) {
+                    // Делим вдоль длинной стороны, чтобы фигуры были более квадратными
+                    if (r.w > r.h) doVert = true;
+                    else if (r.h > r.w) doVert = false;
+                    else doVert = Math.random() > 0.5;
+                } else if (chosen.validVert.length > 0) {
+                    doVert = true;
+                }
+
+                if (doVert) {
+                    // Выбираем разрез ближе к центру, чтобы избежать краев толщиной в 1 клетку
+                    let mid = r.w / 2;
+                    chosen.validVert.sort((a, b) => Math.abs(a - mid) - Math.abs(b - mid));
+                    let bestSplits = chosen.validVert.slice(0, 2);
+                    let splitX = bestSplits[Math.floor(Math.random() * bestSplits.length)];
+                    
+                    rects.splice(chosen.i, 1,
+                        {x: r.x, y: r.y, w: splitX, h: r.h},
+                        {x: r.x + splitX, y: r.y, w: r.w - splitX, h: r.h}
+                    );
+                } else {
+                    let mid = r.h / 2;
+                    chosen.validHoriz.sort((a, b) => Math.abs(a - mid) - Math.abs(b - mid));
+                    let bestSplits = chosen.validHoriz.slice(0, 2);
+                    let splitY = bestSplits[Math.floor(Math.random() * bestSplits.length)];
+
+                    rects.splice(chosen.i, 1,
+                        {x: r.x, y: r.y, w: r.w, h: splitY},
+                        {x: r.x, y: r.y + splitY, w: r.w, h: r.h - splitY}
+                    );
+                }
+            }
+
+            let hints = [];
+            rects.forEach((r, i) => {
+                let hintX = r.x + Math.floor(Math.random() * r.w);
+                let hintY = r.y + Math.floor(Math.random() * r.h);
+
+                let possibleTypes = ['any'];
+                if (r.w === r.h) possibleTypes.push('square');
+                if (r.w > r.h) possibleTypes.push('wide');
+                if (r.h > r.w) possibleTypes.push('tall');
+
+                let type = possibleTypes[Math.floor(Math.random() * possibleTypes.length)];
+                
+                hints.push({
+                    id: i,
+                    x: hintX,
+                    y: hintY,
+                    type: type,
+                    number: r.w * r.h, // ТЕПЕРЬ ВСЕГДА ПОКАЗЫВАЕМ ЦИФРУ ДЛЯ 100% РЕШАЕМОСТИ
+                    color: PALETTE[i % PALETTE.length]
+                });
+            });
+
+            return { size, hints };
+        }
+
+        function showMessage(text, className) {
+            const msgEl = document.getElementById('message');
+            msgEl.textContent = text;
+            msgEl.className = 'message ' + className;
+        }
+
+    </script>
+</body>
+</html>

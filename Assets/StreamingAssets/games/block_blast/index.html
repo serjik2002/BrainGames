@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="uk" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Block Blast</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --text-color: #1c2331;
+            --board-bg: #e2e8f0;
+            --cell-bg: #cbd5e1;
+            --primary: #06D6A0;
+            --shadow: rgba(0,0,0,0.1);
+        }
+        [data-theme="dark"] {
+            --bg-color: #1a1a2e;
+            --text-color: #e2e8f0;
+            --board-bg: #16213e;
+            --cell-bg: #0f3460;
+            --shadow: rgba(0,0,0,0.4);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Nunito', sans-serif; touch-action: none; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+        body { background: var(--bg-color); color: var(--text-color); display: flex; justify-content: center; align-items: center; min-height: 100dvh; overflow: hidden; transition: background 0.3s; }
+        
+        .app-container { width: 100%; max-width: min(100%, calc(100dvh - 220px)); padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; }
+        .theme-btn { width: 50px; height: 50px; border-radius: 50%; border: none; background: var(--board-bg); color: var(--text-color); font-size: 24px; cursor: pointer; box-shadow: 0 4px var(--shadow); }
+        .score-board { display: flex; align-items: center; gap: 10px; font-size: 24px; font-weight: bold; }
+        
+        .board-wrapper { background: var(--board-bg); padding: 10px; border-radius: 12px; box-shadow: 0 8px var(--shadow); }
+        .board { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; aspect-ratio: 1; }
+        .cell { background: var(--cell-bg); border-radius: 6px; transition: transform 0.1s, opacity 0.1s; }
+        
+        .cell.filled { box-shadow: inset 0 -4px rgba(0,0,0,0.2); }
+        
+        /* Спеціальні ефекти підсвічування та згоряння */
+        .cell.highlight-valid { background: var(--preview-color) !important; opacity: 0.85; filter: brightness(0.65); }
+        .cell.highlight-invalid { background: #ef4444 !important; opacity: 0.7; }
+        .cell.clearing { background: #ffffff !important; transform: scale(1.15); opacity: 0.8; z-index: 10; box-shadow: 0 0 15px rgba(255,255,255,0.8); }
+
+        .hand { display: flex; justify-content: space-around; align-items: center; height: 120px; background: var(--board-bg); border-radius: 12px; padding: 10px; box-shadow: 0 8px var(--shadow); }
+        .shape-container { position: relative; width: 80px; height: 80px; display: flex; justify-content: center; align-items: center; }
+        .shape { display: grid; gap: 2px; cursor: grab; }
+        .shape-block { width: 20px; height: 20px; border-radius: 4px; box-shadow: inset 0 -3px rgba(0,0,0,0.2); }
+        
+        /* Dragging styles - тепер зміщено вгору через JS */
+        .shape.dragging { position: fixed; z-index: 100; pointer-events: none; transform: scale(1.5) translate(-50%, -50%); transform-origin: center; transition: transform 0.1s; }
+
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 200; }
+        .modal-content { background: var(--bg-color); padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 30px var(--shadow); }
+        .btn { padding: 15px 40px; border-radius: 20px; border: none; background: var(--primary); color: #fff; font-size: 20px; font-weight: bold; margin-top: 20px; cursor: pointer; transition: transform 0.1s; }
+        .btn:active { transform: scale(0.95); }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">
+        <button class="theme-btn" id="themeBtn">☀️</button>
+        <div class="score-board">⭐ <span id="score">0</span></div>
+    </div>
+    
+    <div class="board-wrapper">
+        <div class="board" id="board"></div>
+    </div>
+    
+    <div class="hand" id="hand"></div>
+</div>
+
+<div class="modal" id="gameOverModal">
+    <div class="modal-content">
+        <h2 style="font-size: 36px; margin-bottom: 10px;">Гра закінчена</h2>
+        <p style="font-size: 20px;">Твій рахунок: <span id="finalScore" style="font-weight: bold; color: var(--primary);">0</span></p>
+        <button class="btn" onclick="location.reload()">Грати ще</button>
+    </div>
+</div>
+
+<script>
+    const GRID_SIZE = 8;
+    const boardEl = document.getElementById('board');
+    const handEl = document.getElementById('hand');
+    const scoreEl = document.getElementById('score');
+    let grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(0));
+    let score = 0;
+    let streak = 0;
+
+    const themeBtn = document.getElementById('themeBtn');
+    themeBtn.addEventListener('click', () => {
+        const html = document.documentElement;
+        const isDark = html.getAttribute('data-theme') === 'dark';
+        html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+        themeBtn.textContent = isDark ? '☀️' : '🌙';
+    });
+
+    for(let r=0; r<GRID_SIZE; r++) {
+        for(let c=0; c<GRID_SIZE; c++) {
+            let cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.id = `cell-${r}-${c}`;
+            boardEl.appendChild(cell);
+        }
+    }
+
+    // Бібліотека фігур з унікальними кольорами
+    const shapesLib = [
+        { matrix: [[1]], color: '#EF476F' }, // Рожевий
+        { matrix: [[1,1]], color: '#FFD166' }, // Жовтий
+        { matrix: [[1],[1]], color: '#FFD166' }, // Жовтий (верт)
+        { matrix: [[1,1,1]], color: '#06D6A0' }, // Зелений
+        { matrix: [[1],[1],[1]], color: '#06D6A0' }, // Зелений (верт)
+        { matrix: [[1,1],[1,1]], color: '#118AB2' }, // Синій
+        { matrix: [[1,0],[1,1]], color: '#9D4EDD' }, // Фіолетовий (кут)
+        { matrix: [[0,1],[1,1]], color: '#9D4EDD' },
+        { matrix: [[1,1],[1,0]], color: '#9D4EDD' },
+        { matrix: [[1,1],[0,1]], color: '#9D4EDD' },
+        { matrix: [[1,1,1],[1,0,0],[1,0,0]], color: '#FF9F1C' }, // Помаранчевий (великий кут)
+        { matrix: [[1,1,1],[0,0,1],[0,0,1]], color: '#FF9F1C' },
+        { matrix: [[0,0,1],[0,0,1],[1,1,1]], color: '#FF9F1C' },
+        { matrix: [[1,0,0],[1,0,0],[1,1,1]], color: '#FF9F1C' }
+    ];
+
+    let currentHand = [];
+
+    function generateHand() {
+        handEl.innerHTML = '';
+        currentHand = [];
+        for(let i=0; i<3; i++) {
+            const shapeObj = shapesLib[Math.floor(Math.random() * shapesLib.length)];
+            currentHand.push(shapeObj);
+            createShapeElement(shapeObj, i);
+        }
+        checkGameOver();
+    }
+
+    function createShapeElement(shapeObj, index) {
+        const container = document.createElement('div');
+        container.className = 'shape-container';
+        
+        const shapeEl = document.createElement('div');
+        shapeEl.className = 'shape';
+        shapeEl.dataset.index = index;
+        shapeEl.style.gridTemplateColumns = `repeat(${shapeObj.matrix[0].length}, 20px)`;
+        
+        shapeObj.matrix.forEach(row => {
+            row.forEach(val => {
+                const block = document.createElement('div');
+                if(val) {
+                    block.className = 'shape-block';
+                    block.style.background = shapeObj.color;
+                }
+                shapeEl.appendChild(block);
+            });
+        });
+
+        setupDrag(shapeEl, shapeObj, container);
+        container.appendChild(shapeEl);
+        handEl.appendChild(container);
+    }
+
+    function setupDrag(el, shapeObj, container) {
+        let isDragging = false;
+        
+        el.addEventListener('pointerdown', (e) => {
+            isDragging = true;
+            el.setPointerCapture(e.pointerId);
+            el.classList.add('dragging');
+            moveAt(e.clientX, e.clientY);
+        });
+
+        el.addEventListener('pointermove', (e) => {
+            if(!isDragging) return;
+            moveAt(e.clientX, e.clientY);
+            
+            clearHighlights();
+            const cellInfo = getTargetCellMath(e.clientX, e.clientY, shapeObj.matrix);
+            if(cellInfo) highlightGrid(cellInfo.r, cellInfo.c, shapeObj);
+        });
+
+        el.addEventListener('pointerup', (e) => {
+            if(!isDragging) return;
+            isDragging = false;
+            el.releasePointerCapture(e.pointerId);
+            el.classList.remove('dragging');
+            el.style.left = 'auto';
+            el.style.top = 'auto';
+            
+            const cellInfo = getTargetCellMath(e.clientX, e.clientY, shapeObj.matrix);
+            if(cellInfo && canPlace(cellInfo.r, cellInfo.c, shapeObj.matrix)) {
+                placeShape(cellInfo.r, cellInfo.c, shapeObj);
+                currentHand[el.dataset.index] = null;
+                container.innerHTML = '';
+                
+                if(currentHand.every(s => s === null)) generateHand();
+                else checkGameOver();
+            }
+            clearHighlights();
+        });
+
+        function moveAt(pageX, pageY) {
+            el.style.left = pageX + 'px';
+            // Зміщуємо фігуру на 80px вгору, щоб палець не перекривав огляд!
+            el.style.top = (pageY - 80) + 'px'; 
+        }
+    }
+
+    // Чиста швидкісна математика без гальм! (замість elementsFromPoint)
+    function getTargetCellMath(x, y, matrix) {
+        const boardRect = boardEl.getBoundingClientRect();
+        const cellW = boardRect.width / GRID_SIZE;
+        
+        const visualX = x;
+        const visualY = y - 80; // Враховуємо візуальне зміщення вгору
+
+        if (visualX < boardRect.left - cellW || visualX > boardRect.right + cellW ||
+            visualY < boardRect.top - cellW || visualY > boardRect.bottom + cellW) {
+            return null;
+        }
+
+        const centerC = Math.floor((visualX - boardRect.left) / cellW);
+        const centerR = Math.floor((visualY - boardRect.top) / cellW);
+
+        // Вираховуємо верхній лівий кут матриці на основі центру
+        const startR = centerR - Math.floor(matrix.length / 2);
+        const startC = centerC - Math.floor(matrix[0].length / 2);
+
+        return {r: startR, c: startC};
+    }
+
+    function canPlace(startR, startC, matrix) {
+        for(let r=0; r<matrix.length; r++) {
+            for(let c=0; c<matrix[0].length; c++) {
+                if(matrix[r][c]) {
+                    let boardR = startR + r;
+                    let boardC = startC + c;
+                    if(boardR < 0 || boardR >= GRID_SIZE || boardC < 0 || boardC >= GRID_SIZE) return false;
+                    if(grid[boardR][boardC] !== 0) return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    function highlightGrid(startR, startC, shapeObj) {
+        const matrix = shapeObj.matrix;
+        const valid = canPlace(startR, startC, matrix);
+        const hClass = valid ? 'highlight-valid' : 'highlight-invalid';
+        
+        for(let r=0; r<matrix.length; r++) {
+            for(let c=0; c<matrix[0].length; c++) {
+                if(matrix[r][c]) {
+                    let boardR = startR + r;
+                    let boardC = startC + c;
+                    if(boardR >= 0 && boardR < GRID_SIZE && boardC >= 0 && boardC < GRID_SIZE) {
+                        const cell = document.getElementById(`cell-${boardR}-${boardC}`);
+                        cell.classList.add(hClass);
+                        if(valid) {
+                            cell.style.setProperty('--preview-color', shapeObj.color);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    function clearHighlights() {
+        document.querySelectorAll('.cell').forEach(c => {
+            c.classList.remove('highlight-valid', 'highlight-invalid');
+        });
+    }
+
+    function placeShape(startR, startC, shapeObj) {
+        let blocksPlaced = 0;
+        const matrix = shapeObj.matrix;
+        
+        for(let r=0; r<matrix.length; r++) {
+            for(let c=0; c<matrix[0].length; c++) {
+                if(matrix[r][c]) {
+                    grid[startR + r][startC + c] = shapeObj.color;
+                    const cell = document.getElementById(`cell-${startR + r}-${startC + c}`);
+                    cell.classList.add('filled');
+                    cell.style.background = shapeObj.color;
+                    blocksPlaced++;
+                }
+            }
+        }
+        
+        score += blocksPlaced;
+        scoreEl.innerText = score;
+        
+        checkClears();
+    }
+
+    function checkClears() {
+        let rowsToClear = [];
+        let colsToClear = [];
+
+        for(let r=0; r<GRID_SIZE; r++) {
+            if(grid[r].every(val => val !== 0)) rowsToClear.push(r);
+        }
+        for(let c=0; c<GRID_SIZE; c++) {
+            let colFull = true;
+            for(let r=0; r<GRID_SIZE; r++) {
+                if(grid[r][c] === 0) { colFull = false; break; }
+            }
+            if(colFull) colsToClear.push(c);
+        }
+
+        const totalLines = rowsToClear.length + colsToClear.length;
+        
+        if(totalLines > 0) {
+            streak++;
+            score += (100 * totalLines) * totalLines * streak;
+            scoreEl.innerText = score;
+            
+            const cellsToClear = new Set();
+            
+            // Логічне очищення (робиться миттєво для уникнення багів)
+            rowsToClear.forEach(r => {
+                for(let c=0; c<GRID_SIZE; c++) { grid[r][c] = 0; cellsToClear.add(`cell-${r}-${c}`); }
+            });
+            colsToClear.forEach(c => {
+                for(let r=0; r<GRID_SIZE; r++) { grid[r][c] = 0; cellsToClear.add(`cell-${r}-${c}`); }
+            });
+
+            // Візуальна анімація очищення (білий спалах)
+            cellsToClear.forEach(id => {
+                document.getElementById(id).classList.add('clearing');
+            });
+
+            setTimeout(() => {
+                cellsToClear.forEach(id => {
+                    const cell = document.getElementById(id);
+                    cell.classList.remove('filled', 'clearing');
+                    cell.style.background = '';
+                });
+            }, 200);
+
+        } else {
+            streak = 0;
+        }
+    }
+
+    function checkGameOver() {
+        let possibleMove = false;
+        const availableShapes = currentHand.filter(s => s !== null);
+        
+        for(let shapeObj of availableShapes) {
+            for(let r=0; r<GRID_SIZE; r++) {
+                for(let c=0; c<GRID_SIZE; c++) {
+                    if(canPlace(r, c, shapeObj.matrix)) {
+                        possibleMove = true;
+                        break;
+                    }
+                }
+                if(possibleMove) break;
+            }
+            if(possibleMove) break;
+        }
+
+        if(!possibleMove && availableShapes.length > 0) {
+            // Невеличка пауза перед геймовером
+            setTimeout(() => {
+                document.getElementById('finalScore').innerText = score;
+                document.getElementById('gameOverModal').style.display = 'flex';
+            }, 300);
+        }
+    }
+
+    generateHand();
+</script>
+</body>
+</html>

@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="uk" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Стрілочки - Brain Games</title>
+    <!-- Підключення confetti для салюту -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap');
+
+        :root {
+            /* Світла тема */
+            --bg-color: #F8F9FA;
+            --text-main: #1C2331;
+            --text-sub: #7A8294;
+            --board-bg: #E9ECEF;
+            --panel-bg: #FFFFFF;
+            --shadow-color: rgba(0, 0, 0, 0.05);
+            
+            /* Палітра блоків (Brain Games) */
+            --color-1: #EF476F;
+            --color-2: #FFD166;
+            --color-3: #06D6A0;
+            --color-4: #118AB2;
+            --color-5: #9D4EDD;
+            --color-6: #F78C6B;
+            --color-7: #4ECDC4;
+            
+            /* Тінь блоків */
+            --block-shadow: rgba(0, 0, 0, 0.15);
+        }
+
+        [data-theme="dark"] {
+            /* Темна тема */
+            --bg-color: #121212;
+            --text-main: #FFFFFF;
+            --text-sub: #A0AABF;
+            --board-bg: #1E1E1E;
+            --panel-bg: #2C2C2C;
+            --shadow-color: rgba(0, 0, 0, 0.2);
+            
+            /* Приглушені кольори блоків для темної теми */
+            --color-1: #D63D60;
+            --color-2: #E6BC5C;
+            --color-3: #05BC8C;
+            --color-4: #0F7A9E;
+            --color-5: #8C45C6;
+            --color-6: #DE7E60;
+            --color-7: #45B8B0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100dvh;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .app-container {
+            width: 100%;
+            /* Ідеальне адаптивне обмеження ширини */
+            max-width: min(100%, calc(100dvh - 220px));
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            flex-grow: 1;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .theme-toggle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--panel-bg);
+            border: none;
+            box-shadow: 0 4px 15px var(--shadow-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.3s;
+        }
+
+        .theme-toggle:active {
+            transform: scale(0.9);
+        }
+
+        .theme-toggle svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--text-main);
+        }
+
+        .score-panel {
+            background-color: var(--panel-bg);
+            padding: 10px 20px;
+            border-radius: 25px;
+            box-shadow: 0 4px 15px var(--shadow-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            font-size: 20px;
+            transition: background-color 0.3s;
+        }
+
+        .score-panel span {
+            color: var(--text-main);
+        }
+
+        .title-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        p.subtitle {
+            font-size: 14px;
+            color: var(--text-sub);
+        }
+
+        /* Ігрове поле */
+        .board-wrapper {
+            width: 100%;
+            aspect-ratio: 1;
+            background-color: var(--board-bg);
+            border-radius: 20px;
+            padding: 10px;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: visible; /* Щоб блоки могли гарно вилітати */
+            transition: background-color 0.3s;
+        }
+
+        .board {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Блоки зі стрілочками */
+        .block-container {
+            position: absolute;
+            transition: top 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), 
+                        left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), 
+                        transform 0.4s cubic-bezier(0.5, 0, 0.2, 1), 
+                        opacity 0.3s;
+            padding: 2%; /* Відступ між блоками */
+        }
+
+        .block {
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+            box-shadow: 0 6px 0 var(--block-shadow);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.1s;
+            position: relative;
+        }
+
+        .block:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 var(--block-shadow);
+        }
+
+        .block svg {
+            width: 60%;
+            height: 60%;
+            fill: var(--block-shadow); /* Іконка кольору тіні */
+            pointer-events: none;
+        }
+
+        /* Повороти стрілочок */
+        .dir-UP svg { transform: rotate(0deg); }
+        .dir-RIGHT svg { transform: rotate(90deg); }
+        .dir-DOWN svg { transform: rotate(180deg); }
+        .dir-LEFT svg { transform: rotate(-90deg); }
+
+        /* Анімації вильоту */
+        .fly-UP { transform: translateY(-1000px); opacity: 0; }
+        .fly-DOWN { transform: translateY(1000px); opacity: 0; }
+        .fly-LEFT { transform: translateX(-1000px); opacity: 0; }
+        .fly-RIGHT { transform: translateX(1000px); opacity: 0; }
+
+        /* Анімації удару (коли шлях заблоковано) */
+        @keyframes bump-UP { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes bump-DOWN { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(10px); } }
+        @keyframes bump-LEFT { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-10px); } }
+        @keyframes bump-RIGHT { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(10px); } }
+
+        .bump-UP .block { animation: bump-UP 0.2s ease-in-out; }
+        .bump-DOWN .block { animation: bump-DOWN 0.2s ease-in-out; }
+        .bump-LEFT .block { animation: bump-LEFT 0.2s ease-in-out; }
+        .bump-RIGHT .block { animation: bump-RIGHT 0.2s ease-in-out; }
+
+        /* Модальне вікно (Overlay) */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal {
+            background-color: var(--panel-bg);
+            padding: 40px;
+            border-radius: 25px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transform: translateY(50px);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .modal h2 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            color: var(--text-main);
+        }
+
+        .modal p {
+            color: var(--text-sub);
+            margin-bottom: 25px;
+        }
+
+        .btn-next {
+            background-color: var(--color-3);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.15);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        .btn-next:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <button class="theme-toggle" id="theme-btn">
+            <!-- Іконка Сонця (по замовчуванню для світлої) -->
+            <svg id="icon-sun" viewBox="0 0 24 24" style="display: none;">
+                <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18.75a.75.75 0 01.75.75V21.75a.75.75 0 01-1.5 0V19.5a.75.75 0 01.75-.75zM6.166 17.834a.75.75 0 00-1.06 1.06l1.59 1.591a.75.75 0 101.061-1.06l-1.59-1.591zM4.5 12a.75.75 0 01-.75.75H1.5a.75.75 0 010-1.5h2.25a.75.75 0 01.75.75zM6.166 6.166a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z"/>
+            </svg>
+            <!-- Іконка Місяця -->
+            <svg id="icon-moon" viewBox="0 0 24 24">
+                <path d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"/>
+            </svg>
+        </button>
+        <div class="score-panel">
+            ⭐ <span id="level-indicator">Рівень 1</span>
+        </div>
+    </header>
+
+    <div class="title-container">
+        <h1>Стрілочки</h1>
+        <p class="subtitle">Знайди вільний шлях і розбери все поле</p>
+    </div>
+
+    <div class="board-wrapper">
+        <div class="board" id="board"></div>
+    </div>
+</div>
+
+<div class="overlay" id="win-overlay">
+    <div class="modal">
+        <h2>Рівень пройдено!</h2>
+        <p>Твоє просторове мислення вражає 🧠</p>
+        <button class="btn-next" onclick="nextLevel()">Наступний рівень</button>
+    </div>
+</div>
+
+<script>
+    // --- АУДІО ДВИЖОК (Web Audio API) ---
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new AudioContext();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function playSound(type) {
+        if (!audioCtx) return;
+        const t = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'fly') {
+            // Швидкий свайп/вжик для вилітаючого блоку
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400, t);
+            osc.frequency.exponentialRampToValueAtTime(800, t + 0.1);
+            gain.gain.setValueAtTime(0, t);
+            gain.gain.linearRampToValueAtTime(0.3, t + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+            osc.start(t);
+            osc.stop(t + 0.2);
+        } else if (type === 'bump') {
+            // Глухий звук удару
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(150, t);
+            osc.frequency.exponentialRampToValueAtTime(50, t + 0.1);
+            gain.gain.setValueAtTime(0.4, t);
+            gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+            osc.start(t);
+            osc.stop(t + 0.1);
+        } else if (type === 'win') {
+            // Радісний акорд перемоги
+            const chord = [523.25, 659.25, 783.99, 1046.50]; // C E G C
+            chord.forEach((freq, i) => {
+                const o = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                o.connect(g);
+                g.connect(audioCtx.destination);
+                o.type = 'sine';
+                o.frequency.value = freq;
+                g.gain.setValueAtTime(0, t + i * 0.1);
+                g.gain.linearRampToValueAtTime(0.2, t + i * 0.1 + 0.05);
+                g.gain.exponentialRampToValueAtTime(0.01, t + i * 0.1 + 0.5);
+                o.start(t + i * 0.1);
+                o.stop(t + i * 0.1 + 0.5);
+            });
+        }
+    }
+
+    // --- ЛОГІКА ТЕМ (Світла/Темна) ---
+    const themeBtn = document.getElementById('theme-btn');
+    const iconSun = document.getElementById('icon-sun');
+    const iconMoon = document.getElementById('icon-moon');
+    
+    let isDark = localStorage.getItem('brain_theme') === 'dark';
+    
+    function updateTheme() {
+        if (isDark) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            iconSun.style.display = 'block';
+            iconMoon.style.display = 'none';
+        } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+            iconSun.style.display = 'none';
+            iconMoon.style.display = 'block';
+        }
+    }
+    
+    themeBtn.addEventListener('click', () => {
+        initAudio(); // Ініціалізація аудіо по першому кліку
+        isDark = !isDark;
+        localStorage.setItem('brain_theme', isDark ? 'dark' : 'light');
+        updateTheme();
+    });
+    updateTheme();
+
+    // --- ЛОГІКА ГРИ "СТРІЛОЧКИ" ---
+    const boardEl = document.getElementById('board');
+    const levelText = document.getElementById('level-indicator');
+    const winOverlay = document.getElementById('win-overlay');
+
+    let currentLevel = 1;
+    let gridSize = 3;
+    let logicalGrid = []; // 2D масив для перевірок [row][col]
+    let activeBlocksCount = 0;
+    
+    const DIRS = ['UP', 'RIGHT', 'DOWN', 'LEFT'];
+    const COLORS = ['var(--color-1)', 'var(--color-2)', 'var(--color-3)', 'var(--color-4)', 'var(--color-5)', 'var(--color-6)', 'var(--color-7)'];
+
+    // Вектори напрямків
+    const vec = {
+        'UP': {r: -1, c: 0},
+        'DOWN': {r: 1, c: 0},
+        'LEFT': {r: 0, c: -1},
+        'RIGHT': {r: 0, c: 1}
+    };
+
+    // SVG стрілки (товста, красива)
+    const arrowSVG = `
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L3 11h5v11h8V11h5L12 2z"/>
+        </svg>
+    `;
+
+    // Запуск гри
+    function initGame() {
+        winOverlay.classList.remove('active');
+        levelText.innerText = `Рівень ${currentLevel}`;
+        boardEl.innerHTML = '';
+        activeBlocksCount = 0;
+
+        // Прогресія складності
+        gridSize = Math.min(8, 2 + Math.floor(currentLevel / 3));
+        // Завжди генеруємо повне поле на 100%
+        let numBlocks = gridSize * gridSize;
+
+        generateSolvableLevel(gridSize, numBlocks);
+    }
+
+    // Перевірка чи шлях вільний у сітці
+    function isPathClear(grid, r, c, dir, size) {
+        let currR = r + vec[dir].r;
+        let currC = c + vec[dir].c;
+        
+        while (currR >= 0 && currR < size && currC >= 0 && currC < size) {
+            if (grid[currR][currC] !== null) return false; // Заблоковано!
+            currR += vec[dir].r;
+            currC += vec[dir].c;
+        }
+        return true; // Шлях чистий аж до краю
+    }
+
+    // Зворотна генерація (гарантує 100% можливість проходження)
+    function generateSolvableLevel(size, targetCount) {
+        let attempts = 0;
+        let maxAttempts = 1000;
+
+        while (attempts < maxAttempts) {
+            attempts++;
+            // Створюємо порожню сітку
+            logicalGrid = Array(size).fill(null).map(() => Array(size).fill(null));
+            let placedBlocks = [];
+            let stuck = false;
+
+            while (placedBlocks.length < targetCount) {
+                let candidates = [];
+
+                // Шукаємо всі пусті клітинки, які зараз мають чистий шлях назовні
+                for (let r = 0; r < size; r++) {
+                    for (let c = 0; c < size; c++) {
+                        if (logicalGrid[r][c] === null) {
+                            let validDirs = [];
+                            for (let dir of DIRS) {
+                                if (isPathClear(logicalGrid, r, c, dir, size)) {
+                                    validDirs.push(dir);
+                                }
+                            }
+                            if (validDirs.length > 0) {
+                                candidates.push({ r, c, dirs: validDirs });
+                            }
+                        }
+                    }
+                }
+
+                // Якщо нікуди ставити (затиснули себе), глухий кут
+                if (candidates.length === 0) {
+                    stuck = true;
+                    break;
+                }
+
+                // ЕВРИСТИКА: пріоритет клітинкам з найменшою кількістю доступних напрямків.
+                // Це не дає генератору заблокувати центр поля і гарантує 100% заповнення.
+                let minDirs = Math.min(...candidates.map(c => c.dirs.length));
+                let bestCandidates = candidates.filter(c => c.dirs.length === minDirs);
+
+                // Обираємо випадкову клітинку серед "найбільш затиснутих" і напрямок
+                let cand = bestCandidates[Math.floor(Math.random() * bestCandidates.length)];
+                let dir = cand.dirs[Math.floor(Math.random() * cand.dirs.length)];
+                let color = COLORS[Math.floor(Math.random() * COLORS.length)];
+
+                let blockData = { r: cand.r, c: cand.c, dir: dir, color: color, id: placedBlocks.length };
+                logicalGrid[cand.r][cand.c] = blockData;
+                placedBlocks.push(blockData);
+            }
+
+            // Якщо ми успішно заповнили поле на 100% без глухих кутів
+            if (!stuck && placedBlocks.length === targetCount) {
+                activeBlocksCount = placedBlocks.length;
+                renderBlocks(placedBlocks, size);
+                return; // Успіх!
+            }
+        }
+        
+        console.error("Не вдалося згенерувати 100% поле, зменшуємо ціль");
+        // Резервний варіант, якщо 100% випадково не згенерувалося
+        generateSolvableLevel(size, targetCount - 1);
+    }
+
+    function renderBlocks(blocks, size) {
+        const cellSize = 100 / size; // Відсоток ширини/висоти
+
+        blocks.forEach(b => {
+            const wrapper = document.createElement('div');
+            wrapper.className = `block-container dir-${b.dir}`;
+            wrapper.style.width = `${cellSize}%`;
+            wrapper.style.height = `${cellSize}%`;
+            wrapper.style.left = `${b.c * cellSize}%`;
+            wrapper.style.top = `${b.r * cellSize}%`;
+            
+            const block = document.createElement('div');
+            block.className = 'block';
+            block.style.backgroundColor = b.color;
+            block.innerHTML = arrowSVG;
+
+            // Зберігаємо координати в DOM для кліків
+            wrapper.dataset.r = b.r;
+            wrapper.dataset.c = b.c;
+            wrapper.dataset.dir = b.dir;
+
+            wrapper.appendChild(block);
+            boardEl.appendChild(wrapper);
+
+            // Обробник кліку (або тапу)
+            wrapper.addEventListener('pointerdown', () => handleBlockClick(wrapper));
+        });
+    }
+
+    function handleBlockClick(wrapper) {
+        initAudio(); // Страховка для iOS
+        if (wrapper.classList.contains('flying')) return; // Вже летить
+
+        const r = parseInt(wrapper.dataset.r);
+        const c = parseInt(wrapper.dataset.c);
+        const dir = wrapper.dataset.dir;
+
+        if (isPathClear(logicalGrid, r, c, dir, gridSize)) {
+            // Шлях вільний!
+            playSound('fly');
+            
+            // Звільняємо місце в логічній сітці миттєво
+            logicalGrid[r][c] = null;
+            wrapper.classList.add('flying');
+            wrapper.classList.add(`fly-${dir}`);
+            
+            activeBlocksCount--;
+
+            // Видаляємо з DOM після анімації
+            setTimeout(() => {
+                wrapper.remove();
+                if (activeBlocksCount === 0) {
+                    triggerWin();
+                }
+            }, 400);
+
+        } else {
+            // Шлях заблоковано!
+            playSound('bump');
+            
+            // Запускаємо анімацію удару (wiggle)
+            wrapper.classList.remove(`bump-UP`, `bump-DOWN`, `bump-LEFT`, `bump-RIGHT`);
+            // Невеликий хак, щоб перезапустити CSS анімацію
+            void wrapper.offsetWidth; 
+            wrapper.classList.add(`bump-${dir}`);
+            
+            setTimeout(() => {
+                wrapper.classList.remove(`bump-${dir}`);
+            }, 200);
+        }
+    }
+
+    function triggerWin() {
+        playSound('win');
+        
+        // Фірмовий салют у пастельних тонах Brain Games
+        const colors = ['#EF476F', '#FFD166', '#06D6A0', '#118AB2'];
+        confetti({
+            particleCount: 150,
+            spread: 80,
+            origin: { y: 0.6 },
+            colors: colors
+        });
+
+        // Показуємо модальне вікно
+        setTimeout(() => {
+            winOverlay.classList.add('active');
+        }, 500);
+    }
+
+    function nextLevel() {
+        currentLevel++;
+        initGame();
+    }
+
+    // Запуск першого рівня при завантаженні
+    initGame();
+
+</script>
+</body>
+</html>

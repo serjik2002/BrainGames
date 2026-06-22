@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="uk" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Послідовність - Brain Games</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #F8F9FA;
+            --text-color: #1C2331;
+            --board-bg: #E9ECEF;
+            --tile-bg: #CED4DA;
+            --btn-bg: #06D6A0;
+            --btn-text: #FFFFFF;
+            --score-bg: #FFFFFF;
+            --modal-overlay: rgba(255, 255, 255, 0.8);
+            
+            /* Пастельні кольори для 9 плиток */
+            --c1: #FFADAD; --c2: #FFD6A5; --c3: #FDFFB6;
+            --c4: #CAFFBF; --c5: #9BF6FF; --c6: #A0C4FF;
+            --c7: #BDB2FF; --c8: #FFC6FF; --c9: #FFFFFC;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --text-color: #FFFFFF;
+            --board-bg: #2D2D2D;
+            --tile-bg: #3D3D3D;
+            --btn-bg: #05A67B;
+            --score-bg: #1E1E1E;
+            --modal-overlay: rgba(0, 0, 0, 0.8);
+            
+            /* Приглушені кольори для темної теми */
+            --c1: #A65D5D; --c2: #A6835B; --c3: #A6A66D;
+            --c4: #75A66D; --c5: #5B9AA6; --c6: #5F7BA6;
+            --c7: #726BA6; --c8: #A67AA6; --c9: #999999;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100dvh;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: min(100%, calc(100dvh - 220px));
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .theme-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background-color: var(--board-bg);
+            color: var(--text-color);
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.3s;
+        }
+
+        .score-board {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: var(--score-bg);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            transition: background-color 0.3s;
+        }
+
+        .title {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 800;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 16px;
+            opacity: 0.6;
+            margin-top: -15px;
+            margin-bottom: 10px;
+            min-height: 22px;
+        }
+
+        .board-wrapper {
+            background-color: var(--board-bg);
+            padding: 15px;
+            border-radius: 25px;
+            aspect-ratio: 1;
+            display: flex;
+            transition: background-color 0.3s;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .tile {
+            background-color: var(--tile-bg);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+        }
+
+        .tile:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 rgba(0,0,0,0);
+        }
+
+        /* Кольори для кожної плитки при активації */
+        .tile.active[data-id="0"] { background-color: var(--c1); box-shadow: 0 0 20px var(--c1); }
+        .tile.active[data-id="1"] { background-color: var(--c2); box-shadow: 0 0 20px var(--c2); }
+        .tile.active[data-id="2"] { background-color: var(--c3); box-shadow: 0 0 20px var(--c3); }
+        .tile.active[data-id="3"] { background-color: var(--c4); box-shadow: 0 0 20px var(--c4); }
+        .tile.active[data-id="4"] { background-color: var(--c5); box-shadow: 0 0 20px var(--c5); }
+        .tile.active[data-id="5"] { background-color: var(--c6); box-shadow: 0 0 20px var(--c6); }
+        .tile.active[data-id="6"] { background-color: var(--c7); box-shadow: 0 0 20px var(--c7); }
+        .tile.active[data-id="7"] { background-color: var(--c8); box-shadow: 0 0 20px var(--c8); }
+        .tile.active[data-id="8"] { background-color: var(--c9); box-shadow: 0 0 20px var(--c9); }
+
+        .btn-reset {
+            background-color: var(--btn-bg);
+            color: var(--btn-text);
+            border: none;
+            padding: 15px;
+            border-radius: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.15);
+            transition: transform 0.1s;
+        }
+
+        .btn-reset:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--modal-overlay);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 100;
+        }
+
+        .modal.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background-color: var(--bg-color);
+            padding: 40px;
+            border-radius: 30px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 300px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">
+        <button class="theme-btn" id="themeBtn">☀️</button>
+        <div class="score-board">
+            ⭐ <span id="score">0</span> / 10
+        </div>
+    </div>
+
+    <div class="title">Послідовність</div>
+    <div class="subtitle" id="statusText">Натисніть "Старт", щоб почати</div>
+
+    <div class="board-wrapper">
+        <div class="grid" id="grid">
+            </div>
+    </div>
+
+    <button class="btn-reset" id="startBtn">Старт</button>
+</div>
+
+<div class="modal" id="resultModal">
+    <div class="modal-content">
+        <h2 id="modalTitle" style="font-size: 32px;">Перемога!</h2>
+        <p id="modalDesc" style="font-size: 18px; opacity: 0.7;">Ви запам'ятали 10 кроків.</p>
+        <button class="btn-reset" id="restartBtn">Грати ще</button>
+    </div>
+</div>
+
+<script>
+    const grid = document.getElementById('grid');
+    const scoreEl = document.getElementById('score');
+    const statusText = document.getElementById('statusText');
+    const startBtn = document.getElementById('startBtn');
+    const themeBtn = document.getElementById('themeBtn');
+    const modal = document.getElementById('resultModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalDesc = document.getElementById('modalDesc');
+    const restartBtn = document.getElementById('restartBtn');
+
+    let sequence = [];
+    let playerSequence = [];
+    let level = 0;
+    const WIN_LEVEL = 10;
+    let isPlaying = false;
+    let playerTurn = false;
+
+    // --- Audio Engine ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Базові частоти для 9 плиток (від низьких до високих)
+    const frequencies = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33];
+
+    function playSound(type, index = 0) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        if (type === 'tile') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(frequencies[index], audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        } else if (type === 'fail') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.5);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        } else if (type === 'win') {
+            osc.type = 'triangle';
+            const now = audioCtx.currentTime;
+            [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                const o = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                o.type = 'triangle';
+                o.frequency.value = freq;
+                o.connect(g);
+                g.connect(audioCtx.destination);
+                g.gain.setValueAtTime(0, now + i * 0.1);
+                g.gain.linearRampToValueAtTime(0.2, now + i * 0.1 + 0.05);
+                g.gain.linearRampToValueAtTime(0, now + i * 0.1 + 0.3);
+                o.start(now + i * 0.1);
+                o.stop(now + i * 0.1 + 0.3);
+            });
+        }
+    }
+
+    // --- Init Board ---
+    for (let i = 0; i < 9; i++) {
+        const tile = document.createElement('div');
+        tile.classList.add('tile');
+        tile.dataset.id = i;
+        
+        // Pointerdown для миттєвого відгуку
+        tile.addEventListener('pointerdown', () => handleTileClick(i, tile));
+        grid.appendChild(tile);
+    }
+
+    // --- Game Logic ---
+    function startGame() {
+        sequence = [];
+        level = 0;
+        isPlaying = true;
+        scoreEl.innerText = level;
+        startBtn.style.display = 'none';
+        nextRound();
+    }
+
+    function nextRound() {
+        playerSequence = [];
+        level++;
+        scoreEl.innerText = level - 1;
+        
+        if (level > WIN_LEVEL) {
+            handleWin();
+            return;
+        }
+
+        statusText.innerText = "Запам'ятовуйте...";
+        playerTurn = false;
+        
+        // Додаємо новий випадковий крок
+        sequence.push(Math.floor(Math.random() * 9));
+        
+        playSequence();
+    }
+
+    async function playSequence() {
+        // Затримка перед показом
+        await new Promise(res => setTimeout(res, 800));
+        
+        for (let i = 0; i < sequence.length; i++) {
+            const tileIndex = sequence[i];
+            const tile = document.querySelector(`[data-id="${tileIndex}"]`);
+            
+            // Підсвічування
+            tile.classList.add('active');
+            playSound('tile', tileIndex);
+            
+            // Швидкість мерехтіння залежить від рівня (адаптивна складність)
+            const speed = Math.max(300, 600 - (level * 20)); 
+            
+            await new Promise(res => setTimeout(res, speed));
+            tile.classList.remove('active');
+            await new Promise(res => setTimeout(res, speed / 2));
+        }
+        
+        statusText.innerText = "Ваша черга!";
+        playerTurn = true;
+    }
+
+    function handleTileClick(index, tileElement) {
+        if (!isPlaying || !playerTurn) return;
+
+        // Візуальний та аудіо відгук миттєво
+        tileElement.classList.add('active');
+        playSound('tile', index);
+        setTimeout(() => tileElement.classList.remove('active'), 200);
+
+        playerSequence.push(index);
+        
+        const currentIndex = playerSequence.length - 1;
+        
+        // Перевірка на помилку
+        if (playerSequence[currentIndex] !== sequence[currentIndex]) {
+            handleGameOver();
+            return;
+        }
+
+        // Якщо успішно введено всю поточну послідовність
+        if (playerSequence.length === sequence.length) {
+            playerTurn = false;
+            statusText.innerText = "Чудово!";
+            setTimeout(nextRound, 1000);
+        }
+    }
+
+    function handleGameOver() {
+        isPlaying = false;
+        playerTurn = false;
+        playSound('fail');
+        showModal('Поразка', `Ви дійшли до ${level - 1} рівня.`);
+    }
+
+    function handleWin() {
+        isPlaying = false;
+        playerTurn = false;
+        scoreEl.innerText = WIN_LEVEL;
+        playSound('win');
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        showModal('Перемога!', `Ви ідеально запам'ятали ${WIN_LEVEL} кроків.`);
+    }
+
+    function showModal(title, desc) {
+        modalTitle.innerText = title;
+        modalDesc.innerText = desc;
+        modal.classList.add('show');
+    }
+
+    startBtn.addEventListener('pointerdown', startGame);
+    restartBtn.addEventListener('pointerdown', () => {
+        modal.classList.remove('show');
+        startGame();
+    });
+
+    // --- Theme System ---
+    let isDark = localStorage.getItem('theme') === 'dark';
+    const updateTheme = () => {
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        themeBtn.innerText = isDark ? '🌙' : '☀️';
+    };
+    updateTheme();
+
+    themeBtn.addEventListener('pointerdown', () => {
+        isDark = !isDark;
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        updateTheme();
+    });
+</script>
+
+</body>
+</html>

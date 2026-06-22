@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2048 - Brain Games</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        /* Базовые цвета и переменные темы */
+        :root {
+            --bg-color: #F8F9FA;
+            --text-color: #1C2331;
+            --text-secondary: #7A8294;
+            --board-bg: #E2E6EB;
+            --cell-bg: #D1D6DE;
+            --btn-bg: #FFFFFF;
+            --btn-shadow: rgba(0, 0, 0, 0.05);
+            
+            /* Цвета плиток (Пастельные) */
+            --tile-2: #FFF0D4;
+            --tile-2-text: #7A8294;
+            --tile-4: #FFE0A8;
+            --tile-4-text: #7A8294;
+            --tile-8: #FFD166;
+            --tile-8-text: #FFFFFF;
+            --tile-16: #FFB067;
+            --tile-16-text: #FFFFFF;
+            --tile-32: #FF8E72;
+            --tile-32-text: #FFFFFF;
+            --tile-64: #EF476F;
+            --tile-64-text: #FFFFFF;
+            --tile-128: #45CB85;
+            --tile-128-text: #FFFFFF;
+            --tile-256: #06D6A0;
+            --tile-256-text: #FFFFFF;
+            --tile-512: #118AB2;
+            --tile-512-text: #FFFFFF;
+            --tile-1024: #073B4C;
+            --tile-1024-text: #FFFFFF;
+            --tile-2048: #9D4EDD;
+            --tile-2048-text: #FFFFFF;
+            --tile-super: #3C096C;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1A1A24;
+            --text-color: #F8F9FA;
+            --text-secondary: #A0AABF;
+            --board-bg: #2A2A38;
+            --cell-bg: #353546;
+            --btn-bg: #2A2A38;
+            --btn-shadow: rgba(0, 0, 0, 0.2);
+
+            /* Приглушенные цвета плиток для темной темы */
+            --tile-2: #4A433A;
+            --tile-2-text: #E2E6EB;
+            --tile-4: #6B5C4A;
+            --tile-4-text: #E2E6EB;
+            --tile-8: #CBA54D;
+            --tile-16: #CB8A50;
+            --tile-32: #CC6F58;
+            --tile-64: #BF3659;
+            --tile-128: #36A369;
+            --tile-256: #05AB80;
+            --tile-512: #0D6F8F;
+            --tile-1024: #052F3D;
+            --tile-2048: #7A3DBF;
+            --tile-super: #2D0652;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        body {
+            font-family: 'Nunito', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100dvh;
+            overflow: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Главный контейнер (Защита от скролла и искажений) */
+        .app-container {
+            width: 100%;
+            max-width: min(100%, calc(100dvh - 180px));
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Верхняя панель */
+        .header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .theme-toggle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--btn-bg);
+            box-shadow: 0 4px 12px var(--btn-shadow);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            border: none;
+            outline: none;
+            color: var(--text-color);
+            transition: transform 0.1s, background-color 0.3s;
+        }
+        
+        .theme-toggle:active {
+            transform: scale(0.9);
+        }
+
+        .score-container {
+            display: flex;
+            align-items: center;
+            background-color: var(--btn-bg);
+            padding: 10px 20px;
+            border-radius: 25px;
+            box-shadow: 0 4px 12px var(--btn-shadow);
+            font-weight: bold;
+            font-size: 1.2rem;
+            transition: background-color 0.3s;
+        }
+
+        .score-container svg {
+            width: 24px;
+            height: 24px;
+            margin-right: 8px;
+            fill: #FFD166;
+        }
+
+        /* Заголовок */
+        .title-area {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 20px;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            line-height: 1;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        /* Игровое поле */
+        .board-bg {
+            width: 100%;
+            background-color: var(--board-bg);
+            border-radius: 16px;
+            padding: 2%; /* Внутренний отступ до сетки */
+            aspect-ratio: 1;
+            position: relative;
+            box-shadow: 0 8px 24px var(--btn-shadow);
+            transition: background-color 0.3s;
+        }
+
+        .board-grid {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 2.666%; /* Идеальный промежуток */
+        }
+
+        .grid-cell {
+            background-color: var(--cell-bg);
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+
+        /* Плитки с числами */
+        .tile-container {
+            position: absolute;
+            top: 2%;
+            left: 2%;
+            width: 96%;
+            height: 96%;
+            pointer-events: none;
+        }
+
+        .tile {
+            position: absolute;
+            width: 23%; /* (100% - 3*gap) / 4 */
+            height: 23%;
+            background-color: var(--tile-2);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--tile-2-text);
+            /* Плавная анимация перемещения */
+            transition: top 0.1s ease-in-out, left 0.1s ease-in-out, transform 0.15s ease-in-out;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Анимация появления */
+        .tile.new {
+            animation: appear 0.2s ease-out forwards;
+        }
+
+        /* Анимация слияния */
+        .tile.merged {
+            animation: pop 0.2s ease-out forwards;
+        }
+
+        @keyframes appear {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        /* Оверлей окончания игры */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 100;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal {
+            background-color: var(--bg-color);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            transform: translateY(50px);
+            transition: transform 0.3s;
+            width: 80%;
+            max-width: 320px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .modal h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: var(--text-color);
+        }
+
+        .modal p {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background-color: #06D6A0;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+            width: 100%;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Классы для расцветки плиток */
+        .t-2 { background-color: var(--tile-2); color: var(--tile-2-text); }
+        .t-4 { background-color: var(--tile-4); color: var(--tile-4-text); }
+        .t-8 { background-color: var(--tile-8); color: var(--tile-8-text); }
+        .t-16 { background-color: var(--tile-16); color: var(--tile-16-text); }
+        .t-32 { background-color: var(--tile-32); color: var(--tile-32-text); }
+        .t-64 { background-color: var(--tile-64); color: var(--tile-64-text); }
+        .t-128 { background-color: var(--tile-128); color: var(--tile-128-text); font-size: 1.6rem; }
+        .t-256 { background-color: var(--tile-256); color: var(--tile-256-text); font-size: 1.6rem; }
+        .t-512 { background-color: var(--tile-512); color: var(--tile-512-text); font-size: 1.6rem; }
+        .t-1024 { background-color: var(--tile-1024); color: var(--tile-1024-text); font-size: 1.2rem; }
+        .t-2048 { background-color: var(--tile-2048); color: var(--tile-2048-text); font-size: 1.2rem; box-shadow: 0 0 15px rgba(157, 78, 221, 0.5); }
+        .t-super { background-color: var(--tile-super); color: var(--tile-2048-text); font-size: 1.2rem; }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Верхняя панель (Тема и Счет) -->
+        <div class="header">
+            <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()">
+                <!-- Иконка Луны/Солнца -->
+                <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            </button>
+            <div class="score-container">
+                <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <span id="scoreDisplay">0</span>
+            </div>
+        </div>
+
+        <!-- Заголовок -->
+        <div class="title-area">
+            <div>
+                <h1 class="title">2048</h1>
+                <p class="subtitle">Собери плитку 2048!</p>
+            </div>
+        </div>
+
+        <!-- Игровое поле -->
+        <div class="board-bg" id="touchArea">
+            <div class="board-grid">
+                <!-- 16 пустых ячеек подложки -->
+                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+            </div>
+            <!-- Слой для динамических плиток -->
+            <div class="tile-container" id="tileContainer"></div>
+        </div>
+    </div>
+
+    <!-- Модальное окно поражения/победы -->
+    <div class="overlay" id="modalOverlay">
+        <div class="modal">
+            <h2 id="modalTitle">Поражение!</h2>
+            <p id="modalDesc">Ходов больше нет.</p>
+            <button class="btn" onclick="restartGame()">ИГРАТЬ ЕЩЕ</button>
+        </div>
+    </div>
+
+    <script>
+        // --- АУДИО ДВИЖОК (Web Audio API) ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            if (type === 'slide') {
+                // Короткий мягкий "шух" при свайпе
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'merge') {
+                // Звонкий "поп" при соединении плиток
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'win') {
+                // Победный арпеджио
+                const notes = [440, 554.37, 659.25, 880];
+                notes.forEach((freq, i) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.type = 'sine';
+                    o.frequency.value = freq;
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    g.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.1);
+                    g.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + i * 0.1 + 0.05);
+                    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.1 + 0.3);
+                    o.start(audioCtx.currentTime + i * 0.1);
+                    o.stop(audioCtx.currentTime + i * 0.1 + 0.3);
+                });
+            }
+        }
+
+        // --- ЛОГИКА ТЕМЫ ---
+        function toggleTheme() {
+            const html = document.documentElement;
+            const isDark = html.getAttribute('data-theme') === 'dark';
+            const newTheme = isDark ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('brainGamesTheme', newTheme);
+            updateThemeIcons(newTheme);
+            playSound('merge');
+        }
+
+        function updateThemeIcons(theme) {
+            document.getElementById('moonIcon').style.display = theme === 'dark' ? 'none' : 'block';
+            document.getElementById('sunIcon').style.display = theme === 'dark' ? 'block' : 'none';
+        }
+
+        // Инициализация темы при загрузке
+        const savedTheme = localStorage.getItem('brainGamesTheme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        updateThemeIcons(savedTheme);
+
+
+        // --- ЛОГИКА ИГРЫ 2048 ---
+        const SIZE = 4;
+        let board = [];
+        let score = 0;
+        let hasWon = false;
+        let isAnimating = false;
+        let tileIdCounter = 0;
+
+        // Расчет процентов для позиционирования плиток:
+        // Размер ячейки 23%, отступ 2.666%
+        function getPos(index) {
+            return (index * (23 + 2.666)) + '%';
+        }
+
+        function initBoard() {
+            board = [];
+            for (let r = 0; r < SIZE; r++) {
+                board[r] = [];
+                for (let c = 0; c < SIZE; c++) {
+                    board[r][c] = null;
+                }
+            }
+            score = 0;
+            hasWon = false;
+            updateScore();
+            document.getElementById('tileContainer').innerHTML = '';
+            addRandomTile();
+            addRandomTile();
+            renderBoard();
+        }
+
+        function addRandomTile() {
+            let emptyCells = [];
+            for (let r = 0; r < SIZE; r++) {
+                for (let c = 0; c < SIZE; c++) {
+                    if (board[r][c] === null) {
+                        emptyCells.push({r, c});
+                    }
+                }
+            }
+            if (emptyCells.length > 0) {
+                let randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                board[randomCell.r][randomCell.c] = {
+                    id: tileIdCounter++,
+                    val: Math.random() < 0.9 ? 2 : 4,
+                    r: randomCell.r,
+                    c: randomCell.c,
+                    isNew: true
+                };
+            }
+        }
+
+        function renderBoard() {
+            const container = document.getElementById('tileContainer');
+            
+            // Отрисовываем текущее состояние
+            for (let r = 0; r < SIZE; r++) {
+                for (let c = 0; c < SIZE; c++) {
+                    let tile = board[r][c];
+                    if (tile) {
+                        let el = document.getElementById('tile-' + tile.id);
+                        if (!el) {
+                            // Создаем новую плитку
+                            el = document.createElement('div');
+                            el.id = 'tile-' + tile.id;
+                            el.className = `tile t-${tile.val > 2048 ? 'super' : tile.val}`;
+                            if (tile.isNew) el.classList.add('new');
+                            if (tile.isMerged) el.classList.add('merged');
+                            el.innerText = tile.val;
+                            container.appendChild(el);
+                            
+                            // Сброс флагов анимации для следующих кадров
+                            tile.isNew = false;
+                            tile.isMerged = false;
+                        } else {
+                            // Обновляем позицию, значение и цвет существующей
+                            el.className = `tile t-${tile.val > 2048 ? 'super' : tile.val}`;
+                            if (tile.isMerged) {
+                                el.classList.add('merged');
+                                tile.isMerged = false;
+                            } else {
+                                el.classList.remove('merged', 'new');
+                            }
+                            el.innerText = tile.val;
+                        }
+                        
+                        // Позиция
+                        el.style.top = getPos(r);
+                        el.style.left = getPos(c);
+                    }
+                }
+            }
+        }
+
+        function updateScore() {
+            document.getElementById('scoreDisplay').innerText = score;
+        }
+
+        function slide(row) {
+            // Удаляем null
+            let arr = row.filter(val => val !== null);
+            // Сливаем одинаковые
+            let merged = false;
+            let removedTiles = [];
+            for (let i = 0; i < arr.length - 1; i++) {
+                if (arr[i].val === arr[i+1].val) {
+                    arr[i].val *= 2;
+                    score += arr[i].val;
+                    arr[i].isMerged = true;
+                    
+                    // Сохраняем id удаляемой плитки и к какой она присоединяется
+                    removedTiles.push({ removedId: arr[i+1].id, mergedIntoId: arr[i].id });
+
+                    arr.splice(i + 1, 1);
+                    merged = true;
+                    
+                    if (arr[i].val === 2048 && !hasWon) {
+                        triggerWin();
+                    }
+                }
+            }
+            // Дополняем нулями
+            while (arr.length < SIZE) {
+                arr.push(null);
+            }
+            return { newRow: arr, merged, removedTiles };
+        }
+
+        function move(direction) {
+            if (isAnimating) return;
+            initAudio();
+
+            let hasMoved = false;
+            let hasMerged = false;
+            let newBoard = JSON.parse(JSON.stringify(board)); // глубокая копия для проверки изменений
+            let allRemovedTiles = [];
+
+            for (let i = 0; i < SIZE; i++) {
+                let row = [];
+                // Формируем ряд/колонку для сдвига
+                for (let j = 0; j < SIZE; j++) {
+                    if (direction === 'LEFT') row.push(board[i][j]);
+                    if (direction === 'RIGHT') row.push(board[i][SIZE - 1 - j]);
+                    if (direction === 'UP') row.push(board[j][i]);
+                    if (direction === 'DOWN') row.push(board[SIZE - 1 - j][i]);
+                }
+
+                let result = slide(row);
+                let newRow = result.newRow;
+                if (result.merged) hasMerged = true;
+                allRemovedTiles.push(...result.removedTiles);
+
+                // Записываем обратно с обновлением координат (r, c)
+                for (let j = 0; j < SIZE; j++) {
+                    let tile = newRow[j];
+                    let r, c;
+                    
+                    if (direction === 'LEFT') { r = i; c = j; }
+                    if (direction === 'RIGHT') { r = i; c = SIZE - 1 - j; }
+                    if (direction === 'UP') { r = j; c = i; }
+                    if (direction === 'DOWN') { r = SIZE - 1 - j; c = i; }
+
+                    if (tile) {
+                        // Если позиция изменилась, фиксируем движение
+                        if (tile.r !== r || tile.c !== c) hasMoved = true;
+                        tile.r = r;
+                        tile.c = c;
+                        
+                        // Прописываем конечные координаты для плитки, которая вливается в текущую
+                        let removed = allRemovedTiles.find(rt => rt.mergedIntoId === tile.id);
+                        if (removed) {
+                            removed.r = r;
+                            removed.c = c;
+                        }
+                    }
+                    board[r][c] = tile;
+                }
+            }
+
+            if (hasMoved || hasMerged) {
+                isAnimating = true;
+                updateScore();
+                
+                // Анимируем удаляемые плитки к их новой позиции
+                allRemovedTiles.forEach(rt => {
+                    let el = document.getElementById('tile-' + rt.removedId);
+                    if (el) {
+                        el.style.top = getPos(rt.r);
+                        el.style.left = getPos(rt.c);
+                        el.classList.add('to-remove');
+                        el.style.zIndex = '0'; // Прячем под основную плитку
+                    }
+                });
+
+                // Рендерим промежуточное состояние (сдвиг)
+                renderBoard();
+
+                if (hasMerged) playSound('merge');
+                else playSound('slide');
+
+                // Ждем окончания CSS анимации (150ms) перед добавлением новой плитки
+                setTimeout(() => {
+                    // Теперь безопасно удаляем слитые плитки из DOM
+                    const elementsToRemove = document.querySelectorAll('.tile.to-remove');
+                    elementsToRemove.forEach(el => el.remove());
+
+                    addRandomTile();
+                    renderBoard();
+                    isAnimating = false;
+                    checkGameOver();
+                }, 150);
+            }
+        }
+
+        function checkGameOver() {
+            // Есть пустые?
+            for (let r = 0; r < SIZE; r++) {
+                for (let c = 0; c < SIZE; c++) {
+                    if (board[r][c] === null) return;
+                }
+            }
+            // Можно слить?
+            for (let r = 0; r < SIZE; r++) {
+                for (let c = 0; c < SIZE; c++) {
+                    let val = board[r][c].val;
+                    if (r < SIZE - 1 && board[r+1][c].val === val) return;
+                    if (c < SIZE - 1 && board[r][c+1].val === val) return;
+                }
+            }
+            
+            // Если дошли сюда — проигрыш
+            showModal("Поражение!", `Ваш счет: ${score}`);
+        }
+
+        function triggerWin() {
+            hasWon = true;
+            playSound('win');
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#06D6A0', '#FFD166', '#EF476F', '#118AB2']
+            });
+            setTimeout(() => {
+                showModal("Победа!", `Вы собрали 2048! Счет: ${score}`);
+            }, 1000);
+        }
+
+        function showModal(title, desc) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalDesc').innerText = desc;
+            document.getElementById('modalOverlay').classList.add('active');
+        }
+
+        function restartGame() {
+            document.getElementById('modalOverlay').classList.remove('active');
+            initAudio();
+            initBoard();
+        }
+
+        // --- УПРАВЛЕНИЕ (Клавиатура и Свайпы) ---
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') move('UP');
+            if (e.key === 'ArrowDown') move('DOWN');
+            if (e.key === 'ArrowLeft') move('LEFT');
+            if (e.key === 'ArrowRight') move('RIGHT');
+            
+            // Предотвращение прокрутки окна стрелками
+            if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
+                e.preventDefault();
+            }
+        });
+
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        const touchArea = document.getElementById('touchArea');
+
+        touchArea.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+            e.preventDefault(); // Убираем стандартные жесты браузера на доске
+        }, {passive: false});
+
+        touchArea.addEventListener('touchend', (e) => {
+            if (isAnimating) return;
+            let touchEndX = e.changedTouches[0].screenX;
+            let touchEndY = e.changedTouches[0].screenY;
+            
+            let dx = touchEndX - touchStartX;
+            let dy = touchEndY - touchStartY;
+            
+            // Защита от случайных кликов (свайп должен быть больше 30px)
+            if (Math.abs(dx) > 30 || Math.abs(dy) > 30) {
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    if (dx > 0) move('RIGHT');
+                    else move('LEFT');
+                } else {
+                    if (dy > 0) move('DOWN');
+                    else move('UP');
+                }
+            }
+        }, {passive: false});
+
+        // Запуск
+        window.onload = initBoard;
+
+    </script>
+</body>
+</html>

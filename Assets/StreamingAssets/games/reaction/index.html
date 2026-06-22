@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="uk" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Тест реакції - Brain Games</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #F8F9FA;
+            --text-color: #1C2331;
+            --board-bg: #E2E8F0;
+            --color-wait: #EF476F; /* Червоний/Рожевий */
+            --color-go: #06D6A0;   /* Зелений */
+            --color-early: #FFD166; /* Жовтий */
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --btn-bg: #FFFFFF;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1A1A24;
+            --text-color: #F8F9FA;
+            --board-bg: #2A2A35;
+            --color-wait: #B93756;
+            --color-go: #05A67D;
+            --color-early: #C6A24F;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --btn-bg: #2A2A35;
+        }
+
+        * { box-sizing: border-box; touch-action: none; user-select: none; }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Nunito', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100dvh;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: min(100%, calc(100dvh - 220px));
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .top-bar {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .theme-btn, .score-btn {
+            background-color: var(--btn-bg);
+            border: none;
+            border-radius: 50px;
+            padding: 10px 20px;
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text-color);
+            box-shadow: 0 4px 0 var(--shadow-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Nunito', sans-serif;
+            transition: transform 0.1s;
+        }
+
+        .theme-btn { padding: 12px; border-radius: 50%; }
+        .theme-btn:active { transform: translateY(4px); box-shadow: none; }
+
+        h1 { margin: 0 0 20px 0; font-size: 32px; text-align: center; }
+
+        .board-container {
+            width: 100%;
+            aspect-ratio: 1;
+            background-color: var(--board-bg);
+            border-radius: 20px;
+            box-shadow: 0 8px 0 var(--shadow-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.1s, transform 0.1s;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .board-container:active {
+            transform: translateY(4px);
+            box-shadow: 0 4px 0 var(--shadow-color);
+        }
+
+        .icon { font-size: 60px; margin-bottom: 10px; }
+        .main-text { font-size: 28px; font-weight: 800; margin: 0; }
+        .sub-text { font-size: 18px; font-weight: 700; opacity: 0.8; margin-top: 10px; }
+
+        /* States */
+        .state-wait { background-color: var(--color-wait); color: white; }
+        .state-go { background-color: var(--color-go); color: white; }
+        .state-early { background-color: var(--color-early); color: var(--text-color); }
+        .state-result { background-color: var(--board-bg); }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="top-bar">
+        <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">☀️</button>
+        <div class="score-btn">🏆 <span id="bestScore">--</span> мс</div>
+    </div>
+
+    <h1>Тест реакції</h1>
+
+    <div class="board-container" id="gameBoard">
+        <div class="icon" id="statusIcon">⚡</div>
+        <p class="main-text" id="mainText">Натисніть, щоб почати</p>
+        <p class="sub-text" id="subText">Дочекайтесь зеленого кольору</p>
+    </div>
+</div>
+
+<script>
+    // Theme Logic
+    const themeBtn = document.getElementById('themeBtn');
+    let isDark = localStorage.getItem('theme') === 'dark';
+    
+    function updateTheme() {
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        themeBtn.textContent = isDark ? '🌙' : '☀️';
+    }
+    
+    function toggleTheme() {
+        isDark = !isDark;
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        updateTheme();
+    }
+    updateTheme();
+
+    // Audio Engine
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+
+    function initAudio() {
+        if (!audioCtx) audioCtx = new AudioContext();
+    }
+
+    function playSound(type) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'beep') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        } else if (type === 'click') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        } else if (type === 'error') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+    }
+
+    // Game Logic
+    const board = document.getElementById('gameBoard');
+    const statusIcon = document.getElementById('statusIcon');
+    const mainText = document.getElementById('mainText');
+    const subText = document.getElementById('subText');
+    const bestScoreEl = document.getElementById('bestScore');
+
+    let state = 'idle'; // idle, waiting, go, result
+    let timeoutId = null;
+    let startTime = 0;
+    let bestScore = localStorage.getItem('reactionBest') || null;
+
+    if (bestScore) bestScoreEl.textContent = bestScore;
+
+    function setBoardClass(className) {
+        board.className = 'board-container ' + className;
+    }
+
+    function startGame() {
+        initAudio();
+        playSound('click');
+        state = 'waiting';
+        setBoardClass('state-wait');
+        statusIcon.textContent = '🛑';
+        mainText.textContent = 'Чекайте...';
+        subText.textContent = 'Не натискайте до зеленого';
+
+        const randomDelay = Math.floor(Math.random() * 3000) + 2000; // 2 to 5 seconds
+        timeoutId = setTimeout(() => {
+            state = 'go';
+            setBoardClass('state-go');
+            statusIcon.textContent = '🟢';
+            mainText.textContent = 'ТИСНИ!';
+            subText.textContent = '';
+            playSound('beep');
+            startTime = Date.now();
+        }, randomDelay);
+    }
+
+    function handleTap() {
+        if (state === 'idle' || state === 'result') {
+            startGame();
+        } else if (state === 'waiting') {
+            // False start
+            clearTimeout(timeoutId);
+            playSound('error');
+            state = 'result';
+            setBoardClass('state-early');
+            statusIcon.textContent = '⚠️';
+            mainText.textContent = 'Зарано!';
+            subText.textContent = 'Натисніть, щоб спробувати ще раз';
+        } else if (state === 'go') {
+            // Success
+            const reactionTime = Date.now() - startTime;
+            playSound('click');
+            state = 'result';
+            setBoardClass('state-result');
+            statusIcon.textContent = '⏱️';
+            mainText.textContent = reactionTime + ' мс';
+            subText.textContent = 'Натисніть, щоб спробувати ще раз';
+
+            if (!bestScore || reactionTime < bestScore) {
+                bestScore = reactionTime;
+                localStorage.setItem('reactionBest', bestScore);
+                bestScoreEl.textContent = bestScore;
+                subText.textContent = '🏆 Новий рекорд! Натисніть ще раз';
+                
+                // If integrated with Unity, you can send the score here:
+                // if (window.Unity) window.Unity.call('newRecord:' + reactionTime);
+            }
+        }
+    }
+
+    // Pointerdown for zero delay
+    board.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        handleTap();
+    });
+
+</script>
+</body>
+</html>

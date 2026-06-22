@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>WORDLE - Brain Games</title>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<style>
+/* ============================================================
+   CSS VARIABLES & BRAIN GAMES THEME
+   ============================================================ */
+:root {
+  /* Light Theme (Default) */
+  --bg: #F8F9FA;
+  --surface: #FFFFFF;
+  --border: #D3D6DA;
+  --text: #1C2331;
+  --text-muted: #7A8294;
+  --correct: #06D6A0; /* Brain Games Pastel Green */
+  --present: #FFD166; /* Brain Games Pastel Yellow */
+  --absent: #AAB2BD;  /* Soft Gray */
+  --key-bg: #E2E8F0;
+  --key-text: #1C2331;
+  --tile-border: #D3D6DA;
+  --tile-border-active: #878A8C;
+  --modal-bg: rgba(255, 255, 255, 0.85);
+  --accent: #06D6A0;
+  --radius: 12px;
+  --font-display: 'Nunito', 'Segoe UI', sans-serif;
+  --font-body: 'Nunito', Arial, sans-serif;
+  --tile-size: min(62px, calc((100vw - 40px) / 5));
+  --key-height: 58px;
+  --transition: 0.3s ease;
+}
+
+[data-theme="dark"] {
+  /* Dark Theme */
+  --bg: #121213;
+  --surface: #1E1E24;
+  --border: #3A3A3C;
+  --text: #F8F9FA;
+  --text-muted: #818384;
+  
+  /* Класичні кольори Wordle для темної теми (як на фото) */
+  --correct: #538d4e; 
+  --present: #b59f3b; 
+  --absent: #3a3a3c;  
+  --key-bg: #818384;  
+  --key-text: #ffffff;
+  
+  --tile-border: #3a3a3c;
+  --tile-border-active: #818384;
+  --modal-bg: rgba(0, 0, 0, 0.85);
+  --accent: #538d4e; 
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+  transition: background var(--transition), color var(--transition);
+}
+
+button { cursor: pointer; border: none; outline: none; font-family: inherit; }
+
+/* ============================================================
+   LAYOUT (BRAIN GAMES APP CONTAINER)
+   ============================================================ */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-width: min(100%, 500px);
+  margin: 0 auto;
+  position: relative;
+  background: var(--bg);
+  box-shadow: 0 0 20px rgba(0,0,0,0.05);
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+#header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  flex-shrink: 0;
+}
+
+#header h1 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-align: center;
+  flex: 1;
+}
+
+.icon-btn {
+  background: var(--surface);
+  color: var(--text);
+  font-size: 20px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  transition: transform 0.1s, background var(--transition);
+}
+.icon-btn:active { transform: scale(0.9); }
+
+.score-badge {
+  background: var(--surface);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+/* ============================================================
+   STATUS BAR
+   ============================================================ */
+#status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+#status-bar span { display: flex; align-items: center; gap: 4px; }
+#status-bar strong { color: var(--text); font-size: 15px; }
+.text-btn { background: none; color: var(--text-muted); font-weight: 700; text-decoration: underline; font-size: 13px;}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+#toast-container {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--text);
+  color: var(--bg);
+  padding: 12px 24px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 700;
+  opacity: 0;
+  transform: translateY(-10px);
+  animation: toastIn 0.2s ease forwards, toastOut 0.3s ease 1.4s forwards;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+@keyframes toastIn { to { opacity: 1; transform: translateY(0); } }
+@keyframes toastOut { to { opacity: 0; transform: translateY(-10px); } }
+
+/* ============================================================
+   GRID
+   ============================================================ */
+#grid-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0;
+  overflow: hidden;
+}
+
+#grid {
+  display: grid;
+  grid-template-rows: repeat(5, var(--tile-size));
+  grid-template-columns: repeat(5, var(--tile-size));
+  gap: 6px;
+}
+
+.tile {
+  width: var(--tile-size);
+  height: var(--tile-size);
+  background: var(--surface);
+  border: 2px solid var(--tile-border);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--tile-size) * 0.46);
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--text);
+  user-select: none;
+  transition: border-color 0.2s, background 0.3s, color 0.3s;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+}
+
+.tile[data-state="tbd"] {
+  border-color: var(--tile-border-active);
+  animation: tilePopIn 0.1s ease;
+}
+
+.tile[data-state="correct"] { background: var(--correct); border-color: var(--correct); color: #fff; box-shadow: none;}
+.tile[data-state="present"] { background: var(--present); border-color: var(--present); color: #fff; box-shadow: none;}
+.tile[data-state="absent"]  { background: var(--absent);  border-color: var(--absent);  color: #fff; box-shadow: none;}
+.tile[data-state="hint"]    { background: #4CC9F0; border-color: #4CC9F0; color: #fff; }
+
+@keyframes tilePopIn {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.tile.flip { animation: tileFlip 0.5s ease forwards; }
+
+@keyframes tileFlip {
+  0%   { transform: rotateX(0deg); }
+  49%  { transform: rotateX(90deg); }
+  50%  { transform: rotateX(90deg); }
+  100% { transform: rotateX(0deg); }
+}
+
+.tile.bounce { animation: tileBounce 0.8s ease forwards; }
+
+@keyframes tileBounce {
+  0%, 20% { transform: translateY(0); }
+  40%     { transform: translateY(-15px); }
+  60%     { transform: translateY(0); }
+  80%     { transform: translateY(-5px); }
+  100%    { transform: translateY(0); }
+}
+
+.row.shake { animation: rowShake 0.4s ease; }
+
+@keyframes rowShake {
+  0%, 100% { transform: translateX(0); }
+  20%  { transform: translateX(-5px); }
+  40%  { transform: translateX(5px); }
+  60%  { transform: translateX(-3px); }
+  80%  { transform: translateX(3px); }
+}
+
+/* ============================================================
+   KEYBOARD
+   ============================================================ */
+#keyboard {
+  flex-shrink: 0;
+  padding: 8px 10px 20px;
+}
+
+.kb-row {
+  display: flex;
+  justify-content: center;
+  gap: 4px; /* Трохи зменшуємо відступ, щоб зекономити місце на мобільних */
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.key {
+  height: var(--key-height);
+  min-width: 0; /* КРИТИЧНО: дозволяє клавішам стискатися менше за свій контент */
+  padding: 0;   /* Прибираємо бічні відступи, щоб текст не ламався */
+  background: var(--key-bg);
+  color: var(--key-text);
+  border-radius: 6px;
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  transition: background 0.2s, transform 0.1s;
+  
+  flex: 1; /* Усі звичайні літери беруть однакову 1 долю ширини */
+}
+
+.key.wide { 
+  flex: 1.5; /* ENTER та Backspace будуть рівно в півтора раза ширші за звичайну літеру */
+  max-width: none; 
+  font-size: 16px; /* Робимо стрілочку візуально трохи більшою */
+}
+.key:active { transform: scale(0.92); }
+
+.key[data-state="correct"] { background: var(--correct); color: #fff; }
+.key[data-state="present"] { background: var(--present); color: #fff; }
+.key[data-state="absent"]  { background: var(--absent);  color: #fff; }
+
+/* ============================================================
+   MODALS (BRAIN GAMES STYLE)
+   ============================================================ */
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--modal-bg);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  padding: 20px;
+}
+
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 30px 24px;
+  width: 100%;
+  max-width: 360px;
+  transform: translateY(30px);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.modal-overlay.open .modal { transform: translateY(0); }
+
+.modal h2 {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 20px;
+  color: var(--text);
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: var(--key-bg);
+  color: var(--text);
+  font-size: 16px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.stat-box {
+  background: var(--bg);
+  padding: 16px 10px;
+  border-radius: 16px;
+}
+
+.stat-box .num { font-size: 26px; font-weight: 800; color: var(--accent); }
+.stat-box .lbl { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-weight: 700; }
+
+.btn-primary {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 800;
+  text-align: center;
+  margin-top: 10px;
+  box-shadow: 0 4px 15px rgba(6, 214, 160, 0.3);
+  transition: transform 0.1s;
+}
+.btn-primary:active { transform: scale(0.96); }
+
+.btn-secondary {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 800;
+  margin-top: 12px;
+  transition: transform 0.1s;
+}
+.btn-secondary:active { transform: scale(0.96); }
+
+.result-word { margin: 10px 0 24px; font-size: 14px; color: var(--text-muted); }
+.result-word strong { font-size: 28px; color: var(--text); display: block; margin-top: 8px; letter-spacing: 2px;}
+
+/* Hints */
+.hint-options { display: flex; flex-direction: column; gap: 10px; }
+.hint-option {
+  padding: 16px;
+  background: var(--bg);
+  border-radius: 16px;
+  text-align: left;
+  color: var(--text);
+  transition: transform 0.1s;
+}
+.hint-option:active { transform: scale(0.98); }
+.hint-option.disabled { opacity: 0.5; pointer-events: none; }
+.hint-option-title { font-weight: 800; font-size: 15px; margin-bottom: 4px; }
+.hint-option-desc  { color: var(--text-muted); font-size: 12px; }
+
+</style>
+</head>
+<body>
+<div class="app-container">
+  
+  <div id="header">
+    <button class="icon-btn" id="btn-theme" title="Змінити тему">🌙</button>
+    <h1>WORDLE</h1>
+    <div class="score-badge">⭐ <span id="score-display">0</span></div>
+  </div>
+
+  <div id="status-bar">
+    <span>🏆 Стрік: <strong id="streak-display">0</strong></span>
+    <span>🎯 Підказки: <strong id="hints-display">3</strong></span>
+    <button class="text-btn" id="btn-stats">Статистика</button>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <div id="grid-wrapper">
+    <div id="grid"></div>
+  </div>
+
+  <div id="keyboard">
+    <div class="kb-row" id="kb-row-0"></div>
+    <div class="kb-row" id="kb-row-1"></div>
+    <div class="kb-row" id="kb-row-2"></div>
+  </div>
+
+  <div class="modal-overlay" id="modal-gameover">
+    <div class="modal" style="position:relative">
+      <h2 id="gameover-title">ГРУ ЗАВЕРШЕНО</h2>
+      <div class="result-word" id="result-word"></div>
+      <div class="stats-grid" id="gameover-stats"></div>
+      <button class="btn-primary" id="btn-play-again">ГРАТИ ЩЕ</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-stats">
+    <div class="modal" style="position:relative">
+      <button class="modal-close" id="close-stats">✕</button>
+      <h2>Статистика</h2>
+      <div class="stats-grid" id="stats-grid"></div>
+      <button class="btn-secondary" id="btn-hint">Використати підказку</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-hint">
+    <div class="modal" style="position:relative">
+      <button class="modal-close" id="close-hint">✕</button>
+      <h2>Підказки</h2>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Залишилось: <strong id="hint-count-modal">3</strong></p>
+      <div class="hint-options" id="hint-options"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ============================================================
+   AUDIO ENGINE (BRAIN GAMES)
+   ============================================================ */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playSound(type) {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  if (type === 'click') {
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.05);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.05);
+  } else if (type === 'win') {
+    osc.type = 'triangle';
+    const now = audioCtx.currentTime;
+    osc.frequency.setValueAtTime(400, now);
+    osc.frequency.setValueAtTime(523.25, now + 0.1); // C5
+    osc.frequency.setValueAtTime(659.25, now + 0.2); // E5
+    osc.frequency.setValueAtTime(783.99, now + 0.3); // G5
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.linearRampToValueAtTime(0, now + 0.6);
+    osc.start();
+    osc.stop(now + 0.6);
+  }
+}
+
+/* ============================================================
+   WORD DICTIONARY
+   ============================================================ */
+class WordDictionary {
+  constructor() {
+    this.words = []; // Спочатку масив порожній
+  }
+
+  // Нова асинхронна функція для завантаження файлу
+  async loadFromFile(filename = 'words.txt') {
+    try {
+      const response = await fetch(filename);
+      if (!response.ok) throw new Error('Файл не знайдено');
+      
+      const text = await response.text();
+      
+      // Розбиваємо текст по пробілах або переносах рядків (\s+)
+      // Залишаємо тільки слова з 5 літер
+      this.words = text.split(/\s+/)
+        .filter(w => w.length === 5 && /^[a-zA-Zа-яА-ЯіІїЇєЄ]+$/.test(w))
+        .map(w => w.toUpperCase());
+
+      // Прибираємо дублікати
+      this.words = [...new Set(this.words)];
+      
+    } catch (error) {
+      console.error("Помилка завантаження слів:", error);
+      // Резервні слова, якщо файл не завантажився
+      this.words = ["BRAIN", "GAMES", "APPLE", "SMART", "LOGIC"];
+    }
+  }
+
+  getRandom() {
+    return this.words[Math.floor(Math.random() * this.words.length)];
+  }
+
+  isValid(word) {
+    return this.words.includes(word.toUpperCase());
+  }
+}
+
+/* ============================================================
+   MANAGERS
+   ============================================================ */
+class SaveManager {
+  constructor() { this.prefix = 'bg_wordle_'; }
+  save(key, value) { try { localStorage.setItem(this.prefix + key, JSON.stringify(value)); } catch (e) {} }
+  load(key, fallback = null) {
+    try { const raw = localStorage.getItem(this.prefix + key); return raw !== null ? JSON.parse(raw) : fallback; } 
+    catch (e) { return fallback; }
+  }
+}
+
+class StatisticsManager {
+  constructor(saveManager) {
+    this.sm = saveManager;
+    this.data = this.sm.load('stats', { played: 0, wins: 0, streak: 0, bestStreak: 0, score: 0 });
+  }
+  recordWin(points) {
+    this.data.played++; this.data.wins++; this.data.streak++;
+    this.data.bestStreak = Math.max(this.data.bestStreak, this.data.streak);
+    this.data.score += points;
+    this.persist();
+  }
+  recordLoss() {
+    this.data.played++; this.data.streak = 0;
+    this.persist();
+  }
+  persist() { this.sm.save('stats', this.data); }
+}
+
+/* ============================================================
+   GRID & KEYBOARD
+   ============================================================ */
+class Grid {
+  constructor(rows = 5, cols = 5) {
+    this.rows = rows; this.cols = cols; this.tiles = [];
+  }
+  build() {
+    const el = document.getElementById('grid'); el.innerHTML = ''; this.tiles = [];
+    for (let r = 0; r < this.rows; r++) {
+      const rowTiles = [];
+      for (let c = 0; c < this.cols; c++) {
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        el.appendChild(tile);
+        rowTiles.push(tile);
+      }
+      this.tiles.push(rowTiles);
+    }
+  }
+  setLetter(row, col, letter) {
+    const tile = this.tiles[row][col];
+    tile.textContent = letter;
+    tile.dataset.state = letter ? 'tbd' : '';
+  }
+async revealRow(row, results, onTileReveal) {
+    const rowTiles = this.tiles[row];
+    for (let c = 0; c < this.cols; c++) {
+      const tile = rowTiles[c];
+      const state = results[c];
+      
+      // Зменшено затримку між переворотами карток (було 300, стало 100)
+      const delay = c * 10; 
+
+      await new Promise(resolve => {
+        setTimeout(() => {
+          tile.classList.add('flip');
+          
+          // Змінюємо колір рівно на екваторі анімації (150мс - це половина від 0.3s)
+          setTimeout(() => {
+            tile.dataset.state = state;
+            if (onTileReveal) onTileReveal(c, state, tile.textContent);
+          }, 150);
+          
+          tile.addEventListener('animationend', () => { 
+            tile.classList.remove('flip'); 
+            resolve(); 
+          }, { once: true });
+        }, delay);
+      });
+    }
+  }
+  bounceRow(row) {
+    this.tiles[row].forEach((tile, i) => {
+      setTimeout(() => {
+        tile.classList.add('bounce');
+        tile.addEventListener('animationend', () => tile.classList.remove('bounce'), { once: true });
+      }, i * 10);
+    });
+  }
+  shakeRow(row) {
+    this.tiles[row].forEach(t => {
+      t.style.animation = 'none'; t.offsetHeight;
+      t.style.animation = 'rowShake 0.4s ease';
+    });
+  }
+  setTileHint(row, col, letter) {
+    const tile = this.tiles[row][col];
+    tile.textContent = letter; tile.dataset.state = 'hint';
+  }
+  reset() { this.tiles.forEach(row => row.forEach(t => { t.textContent = ''; t.dataset.state = ''; })); }
+}
+
+class Keyboard {
+  constructor(onKey) {
+    this.onKey = onKey;
+    this.rows = [['Q','W','E','R','T','Y','U','I','O','P'], ['A','S','D','F','G','H','J','K','L'], ['ENTER','Z','X','C','V','B','N','M','⌫']];
+    this.keyMap = {};
+  }
+build() {
+    this.rows.forEach((row, ri) => {
+      const el = document.getElementById(`kb-row-${ri}`);
+      el.innerHTML = '';
+      row.forEach(k => {
+        const btn = document.createElement('button');
+        btn.className = 'key' + (k === 'ENTER' || k === '⌫' ? ' wide' : '');
+        
+        // Оцієї заміни достатньо: на екрані буде стрілочка, а всередині коду — ENTER
+        btn.textContent = (k === 'ENTER') ? '➔' : k; 
+        
+        btn.dataset.key = k;
+        btn.addEventListener('touchstart', e => { e.preventDefault(); this.onKey(k); }, { passive: false });
+        btn.addEventListener('mousedown', e => { e.preventDefault(); this.onKey(k); });
+        el.appendChild(btn);
+        if (k !== 'ENTER' && k !== '⌫') this.keyMap[k] = btn;
+      });
+    });
+  }
+  updateKey(letter, state) {
+    const btn = this.keyMap[letter]; if (!btn) return;
+    const priority = { correct: 3, present: 2, absent: 1 };
+    const cur = btn.dataset.state;
+    if (!cur || (priority[state] || 0) > (priority[cur] || 0)) btn.dataset.state = state;
+  }
+  reset() { Object.values(this.keyMap).forEach(btn => { btn.dataset.state = ''; }); }
+}
+
+/* ============================================================
+   GAME MANAGER
+   ============================================================ */
+class GameManager {
+  constructor() {
+    this.dict = new WordDictionary();
+    this.sm = new SaveManager();
+    this.stats = new StatisticsManager(this.sm);
+    this.grid = new Grid(5, 5);
+    this.kb = new Keyboard(k => this.handleKey(k));
+    this.theme = this.sm.load('theme', 'light');
+    this.state = { word: '', guesses: [], currentGuess: '', currentRow: 0, gameOver: false, hintsLeft: 3 };
+    this.animating = false;
+  }
+
+async init() {
+    this.applyTheme();
+    this.grid.build();
+    this.kb.build();
+    this.bindEvents();
+    
+    // Чекаємо, поки завантажаться слова з файлу
+    await this.dict.loadFromFile('words.txt');
+    
+    this.newGame();
+  }
+
+  applyTheme() {
+    document.documentElement.setAttribute('data-theme', this.theme);
+    const btn = document.getElementById('btn-theme');
+    btn.textContent = this.theme === 'dark' ? '☀️' : '🌙';
+  }
+
+  bindEvents() {
+    document.getElementById('btn-theme').addEventListener('click', () => {
+      this.theme = this.theme === 'dark' ? 'light' : 'dark';
+      this.sm.save('theme', this.theme);
+      this.applyTheme();
+    });
+    document.getElementById('btn-stats').addEventListener('click', () => this.openStats());
+    document.getElementById('btn-hint').addEventListener('click', () => { this.closeModal('modal-stats'); this.openHint(); });
+    document.getElementById('close-stats').addEventListener('click', () => this.closeModal('modal-stats'));
+    document.getElementById('close-hint').addEventListener('click', () => this.closeModal('modal-hint'));
+    document.getElementById('btn-play-again').addEventListener('click', () => { this.closeModal('modal-gameover'); this.newGame(); });
+
+    document.addEventListener('keydown', e => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === 'Enter') { playSound('click'); this.handleKey('ENTER'); }
+      else if (e.key === 'Backspace') { playSound('click'); this.handleKey('⌫'); }
+      else if (/^[a-zA-Z]$/.test(e.key)) { playSound('click'); this.handleKey(e.key.toUpperCase()); }
+    });
+  }
+
+  newGame() {
+    this.state = { word: this.dict.getRandom(), guesses: [], currentGuess: '', currentRow: 0, gameOver: false, hintsLeft: 3 };
+    this.grid.reset(); this.kb.reset(); this.animating = false;
+    this.renderStatus();
+  }
+
+  handleKey(key) {
+    if (this.animating || this.state.gameOver || document.querySelector('.modal-overlay.open')) return;
+    if (key === 'ENTER') this.submitGuess();
+    else if (key === '⌫') this.deleteLetter();
+    else if (/^[A-Z]$/.test(key) && this.state.currentGuess.length < 5) this.addLetter(key);
+  }
+
+  addLetter(letter) {
+    this.grid.setLetter(this.state.currentRow, this.state.currentGuess.length, letter);
+    this.state.currentGuess += letter;
+  }
+
+  deleteLetter() {
+    if (!this.state.currentGuess.length) return;
+    this.state.currentGuess = this.state.currentGuess.slice(0, -1);
+    this.grid.setLetter(this.state.currentRow, this.state.currentGuess.length, '');
+  }
+
+  async submitGuess() {
+    const guess = this.state.currentGuess;
+    if (guess.length < 5) { this.toast('Недостатньо літер'); this.grid.shakeRow(this.state.currentRow); return; }
+    if (!this.dict.isValid(guess)) { this.toast('Слова немає в словнику'); this.grid.shakeRow(this.state.currentRow); return; }
+
+    this.animating = true;
+    const results = this.checkGuess(guess, this.state.word);
+    const row = this.state.currentRow;
+
+    await this.grid.revealRow(row, results, (col, state, letter) => this.kb.updateKey(letter, state));
+
+    this.state.guesses.push(guess);
+    this.state.currentGuess = '';
+    this.state.currentRow++;
+
+    if (results.every(r => r === 'correct')) {
+      this.state.gameOver = true;
+      const points = (6 - row) * 10;
+      this.stats.recordWin(points);
+      playSound('win');
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#06D6A0', '#FFD166', '#EF476F'] });
+      this.grid.bounceRow(row);
+      await new Promise(r => setTimeout(r, 1500));
+      this.openGameOver(true, points);
+    } else if (this.state.currentRow >= 5) {
+      this.state.gameOver = true;
+      this.stats.recordLoss();
+      await new Promise(r => setTimeout(r, 500));
+      this.openGameOver(false, 0);
+    }
+    this.animating = false;
+    this.renderStatus();
+  }
+
+  checkGuess(guess, word) {
+    const results = Array(5).fill('absent');
+    const wArr = word.split(''); const gArr = guess.split(''); const used = Array(5).fill(false);
+    gArr.forEach((l, i) => { if (l === wArr[i]) { results[i] = 'correct'; used[i] = true; } });
+    gArr.forEach((l, i) => {
+      if (results[i] === 'correct') return;
+      const j = wArr.findIndex((w, wi) => w === l && !used[wi]);
+      if (j !== -1) { results[i] = 'present'; used[j] = true; }
+    });
+    return results;
+  }
+
+  renderStatus() {
+    document.getElementById('streak-display').textContent = this.stats.data.streak;
+    document.getElementById('hints-display').textContent = this.state.hintsLeft;
+    document.getElementById('score-display').textContent = this.stats.data.score;
+  }
+
+  toast(msg) {
+    const container = document.getElementById('toast-container');
+    const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
+    container.appendChild(t); setTimeout(() => t.remove(), 2000);
+  }
+
+  openModal(id) { document.getElementById(id).classList.add('open'); }
+  closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+  openStats() {
+    const d = this.stats.data;
+    document.getElementById('stats-grid').innerHTML = `
+      <div class="stat-box"><div class="num">${d.played}</div><div class="lbl">Ігор</div></div>
+      <div class="stat-box"><div class="num">${d.wins}</div><div class="lbl">Перемог</div></div>
+      <div class="stat-box"><div class="num">${d.streak}</div><div class="lbl">Стрік</div></div>
+      <div class="stat-box"><div class="num">${d.bestStreak}</div><div class="lbl">Рекорд</div></div>
+    `;
+    this.openModal('modal-stats');
+  }
+
+  openHint() {
+    if (this.state.gameOver) return;
+    document.getElementById('hint-count-modal').textContent = this.state.hintsLeft;
+    const opts = document.getElementById('hint-options');
+    const w = this.state.word;
+
+    opts.innerHTML = `
+      <button class="hint-option ${this.state.hintsLeft === 0 ? 'disabled' : ''}" onclick="game.useHint('random')">
+        <div class="hint-option-title">🎲 Випадкова літера</div>
+        <div class="hint-option-desc">Відкриває правильну літеру на полі</div>
+      </button>
+      <button class="hint-option ${this.state.hintsLeft === 0 ? 'disabled' : ''}" onclick="game.useHint('exclude')">
+        <div class="hint-option-title">❌ Прибрати зайве</div>
+        <div class="hint-option-desc">Видаляє 3 літери з клавіатури</div>
+      </button>
+    `;
+    this.openModal('modal-hint');
+  }
+
+  useHint(type) {
+    if (this.state.hintsLeft <= 0) return;
+    this.state.hintsLeft--;
+    const word = this.state.word;
+
+    if (type === 'random') {
+      const unknown = [];
+      for (let c = 0; c < 5; c++) {
+        if (!this.state.guesses.some(g => this.checkGuess(g, word)[c] === 'correct')) unknown.push(c);
+      }
+      if (unknown.length) {
+        const col = unknown[Math.floor(Math.random() * unknown.length)];
+        this.grid.setTileHint(this.state.currentRow, col, word[col]);
+      }
+    } else if (type === 'exclude') {
+      const notInWord = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(l => !word.includes(l));
+      for(let i = 0; i < 3; i++) {
+        const l = notInWord.splice(Math.floor(Math.random() * notInWord.length), 1)[0];
+        this.kb.updateKey(l, 'absent');
+      }
+    }
+    this.renderStatus(); this.closeModal('modal-hint');
+  }
+
+  openGameOver(won, points) {
+    document.getElementById('gameover-title').textContent = won ? 'ПЕРЕМОГА!' : 'ГРУ ЗАВЕРШЕНО';
+    document.getElementById('result-word').innerHTML = won 
+      ? `Ви отримали <strong>+${points} очок</strong>` 
+      : `Загадане слово: <strong>${this.state.word}</strong>`;
+    
+    document.getElementById('gameover-stats').innerHTML = `
+      <div class="stat-box"><div class="num">${this.stats.data.streak}</div><div class="lbl">Поточний стрік</div></div>
+      <div class="stat-box"><div class="num">${this.stats.data.score}</div><div class="lbl">Всього очок</div></div>
+    `;
+    this.openModal('modal-gameover');
+  }
+}
+
+const game = new GameManager();
+document.addEventListener('DOMContentLoaded', () => game.init());
+</script>
+</body>
+</html>

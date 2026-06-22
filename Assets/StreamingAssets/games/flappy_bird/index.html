@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Brain Flap - Brain Games</title>
+    <style>
+        :root {
+            --bg-color: #F8F9FA;
+            --board-bg: #bbd9f0; /* Легке блакитне небо */
+            --text-color: #1C2331;
+            --shadow-color: rgba(0, 0, 0, 0.15);
+            --grid-color: rgba(255, 255, 255, 0.6);
+            --orb-color: rgba(255, 255, 255, 0.4);
+            --overlay-bg: rgba(28, 35, 49, 0.75); /* Темний контрастний фон для світлої теми */
+            --overlay-text: #FFFFFF; /* Білий текст */
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --board-bg: #1A237E; /* Нічне небо */
+            --text-color: #E0E0E0;
+            --shadow-color: rgba(0, 0, 0, 0.4);
+            --grid-color: rgba(255, 255, 255, 0.05);
+            --orb-color: rgba(255, 255, 255, 0.05);
+            --overlay-bg: rgba(0, 0, 0, 0.85); /* Ще темніший фон для нічної теми */
+            --overlay-text: #FFFFFF;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Nunito', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); display: flex; justify-content: center; align-items: center; min-height: 100dvh; overflow: hidden; transition: background-color 0.3s; }
+        
+        .app-container {
+            width: 100%;
+            max-width: min(100%, calc(100dvh - 220px));
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .header { display: flex; justify-content: space-between; align-items: center; }
+        .theme-btn { width: 50px; height: 50px; border-radius: 50%; background: var(--board-bg); border: none; cursor: pointer; font-size: 24px; box-shadow: 0 4px 10px var(--shadow-color); transition: 0.3s; }
+        .score-box { display: flex; align-items: center; gap: 8px; font-size: 24px; font-weight: bold; background: var(--board-bg); padding: 10px 20px; border-radius: 20px; box-shadow: 0 4px 10px var(--shadow-color); }
+
+        .board {
+            width: 100%;
+            aspect-ratio: 1;
+            background-color: var(--board-bg);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 20px var(--shadow-color);
+            touch-action: none;
+            transition: background-color 0.3s;
+        }
+
+        /* ФОНОВІ ЕЛЕМЕНТИ (Паралакс та Сітка) */
+        .bg-orb {
+            position: absolute;
+            width: 35%;
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, var(--orb-color), transparent);
+            border-radius: 50%;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .bg-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image:
+                /* Пагорби */
+                radial-gradient(circle at 50px calc(100% + 20px), var(--orb-color) 60px, transparent 61px),
+                radial-gradient(circle at 180px calc(100% + 30px), var(--orb-color) 90px, transparent 91px),
+                radial-gradient(circle at 280px calc(100% + 10px), var(--orb-color) 50px, transparent 51px),
+                /* Сітка */
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 300px 100%, 300px 100%, 300px 100%, 40px 40px, 40px 40px;
+            background-repeat: repeat-x, repeat-x, repeat-x, repeat, repeat;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* УНІКАЛЬНИЙ ПЕРСОНАЖ (М'який градієнтний куб) */
+        .bird {
+            position: absolute;
+            width: 8%;
+            height: 8%;
+            left: 20%;
+            background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%);
+            border-radius: 35%; /* Squircle / м'який квадрат */
+            box-shadow: 0 4px 15px rgba(255, 154, 158, 0.5);
+            z-index: 5;
+            transition: transform 0.1s ease-out;
+        }
+        
+        /* Мінімалістичне "око" */
+        .bird::after {
+            content: '';
+            position: absolute;
+            width: 25%;
+            aspect-ratio: 1;
+            background: white;
+            border-radius: 50%;
+            top: 20%;
+            right: 20%;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* МІНІМАЛІСТИЧНІ ПЕРЕШКОДИ */
+        .pipe {
+            position: absolute;
+            width: 12%;
+            background: linear-gradient(to right, #4EA8DE, #56CFE1);
+            border-radius: 12px;
+            box-shadow: inset -2px 0 8px rgba(0,0,0,0.1), 0 4px 10px var(--shadow-color);
+            z-index: 2;
+        }
+        [data-theme="dark"] .pipe {
+            background: linear-gradient(to right, #023E8A, #0077B6);
+        }
+
+        .start-screen, .game-over {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--overlay-bg);
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: var(--overlay-text);
+            z-index: 10;
+            border-radius: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .hidden { display: none !important; }
+        .btn { margin-top: 15px; padding: 12px 30px; border: none; border-radius: 20px; background: #FF4081; color: white; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(255, 64, 129, 0.4); }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">
+        <button class="theme-btn" id="themeBtn">☀️</button>
+        <div class="score-box">⭐ <span id="scoreDisplay">0</span></div>
+    </div>
+
+    <div class="board" id="gameBoard">
+        <div class="bg-orb"></div>
+        <div class="bg-layer" id="bgLayer"></div>
+        <div class="bird" id="bird"></div>
+        <div class="start-screen" id="startScreen">
+            <h2>Brain Flap</h2>
+            <p>Тапни, щоб летіти</p>
+        </div>
+        <div class="game-over hidden" id="gameOverScreen">
+            <h2>Поразка!</h2>
+            <p>Рахунок: <span id="finalScore">0</span></p>
+            <button class="btn" id="restartBtn">Грати ще</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const board = document.getElementById('gameBoard');
+    const birdEl = document.getElementById('bird');
+    const startScreen = document.getElementById('startScreen');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const finalScore = document.getElementById('finalScore');
+    const themeBtn = document.getElementById('themeBtn');
+
+    let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(type) {
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        if (type === 'flap') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+        } else if (type === 'score') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+        } else if (type === 'die') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        }
+    }
+
+    let isPlaying = false;
+    let frameId;
+    
+    // Ідеальна фізика, захищена від 120Hz екранів (deltaTime)
+    let birdY = 50;
+    let velocity = 0;
+    const gravity = 0.04;    // Супер легка гравітація
+    const jump = -1.25;       // М'який поштовх
+    const maxFallSpeed = 1.6; // Термінальна швидкість (більше не падатиме як цеглина)
+    
+    let pipes = [];
+    let score = 0;
+    let pipeSpawnTimer = 0;
+    let lastTime = 0;
+    let bgScroll = 0;
+    const bgLayer = document.getElementById('bgLayer');
+
+    function resetGame() {
+        birdY = 50; velocity = 0; score = 0; pipes = []; pipeSpawnTimer = 0; lastTime = 0; bgScroll = 0;
+        scoreDisplay.innerText = score;
+        bgLayer.style.backgroundPosition = `0px 0, 0px 0, 0px 0, 0px 0, 0px 0`;
+        birdEl.style.top = birdY + '%';
+        birdEl.style.transform = `translateY(-50%) rotate(0deg)`;
+        document.querySelectorAll('.pipe').forEach(p => p.remove());
+        gameOverScreen.classList.add('hidden');
+        startScreen.classList.remove('hidden');
+        isPlaying = false;
+    }
+
+    function flap() {
+        if (!isPlaying) {
+            isPlaying = true;
+            startScreen.classList.add('hidden');
+            lastTime = performance.now();
+            frameId = requestAnimationFrame(gameLoop);
+        }
+        velocity = jump;
+        playSound('flap');
+    }
+
+    function spawnPipe() {
+        const gapSize = Math.max(28, 40 - score * 0.3); // Звичайний проміжок
+        const gapY = Math.random() * (100 - gapSize - 20) + 10;
+        
+        const pipeTop = document.createElement('div');
+        pipeTop.className = 'pipe';
+        pipeTop.style.top = '0';
+        pipeTop.style.height = gapY + '%';
+        pipeTop.style.left = '100%';
+        
+        const pipeBottom = document.createElement('div');
+        pipeBottom.className = 'pipe';
+        pipeBottom.style.bottom = '0';
+        pipeBottom.style.height = (100 - gapY - gapSize) + '%';
+        pipeBottom.style.left = '100%';
+
+        board.appendChild(pipeTop);
+        board.appendChild(pipeBottom);
+
+        pipes.push({ x: 100, passed: false, topEl: pipeTop, bottomEl: pipeBottom });
+    }
+
+    function gameLoop(timestamp) {
+        if (!isPlaying) return;
+        
+        // Захист від 120Hz/144Hz моніторів та лагів
+        const deltaTime = timestamp - lastTime;
+        lastTime = timestamp;
+        const timeScale = Math.min(deltaTime / 16.66, 3); // Нормалізуємо до 60 кастрів/сек
+
+        // Паралакс фону (сітка та пагорби)
+        bgScroll -= 1 * timeScale;
+        bgLayer.style.backgroundPosition = `${bgScroll * 0.5}px 0, ${bgScroll * 0.5}px 0, ${bgScroll * 0.5}px 0, ${bgScroll}px 0, ${bgScroll}px 0`;
+
+        // Математика фізики з урахуванням герцівки
+        velocity += gravity * timeScale;
+        if (velocity > maxFallSpeed) velocity = maxFallSpeed;
+        birdY += velocity * timeScale;
+        
+        birdEl.style.top = birdY + '%';
+        
+        // Нахил Bugdroid
+        let rotation = Math.max(-15, Math.min(velocity * 10, 45));
+        birdEl.style.transform = `translateY(-50%) rotate(${rotation}deg)`;
+
+        // Спавн льодяників
+        pipeSpawnTimer += timeScale;
+        if (pipeSpawnTimer > 110) { 
+            spawnPipe(); 
+            pipeSpawnTimer = 0; 
+        }
+
+        for (let i = pipes.length - 1; i >= 0; i--) {
+            let p = pipes[i];
+            p.x -= 0.5 * timeScale; // Плавний рух перешкод
+            p.topEl.style.left = p.x + '%';
+            p.bottomEl.style.left = p.x + '%';
+
+            if (!p.passed && p.x < 20) {
+                p.passed = true;
+                score++;
+                scoreDisplay.innerText = score;
+                playSound('score');
+            }
+
+            // Колізії
+            let birdRect = birdEl.getBoundingClientRect();
+            let topRect = p.topEl.getBoundingClientRect();
+            let botRect = p.bottomEl.getBoundingClientRect();
+            
+            // Звужуємо хітбокс персонажа (щоб гралося комфортніше)
+            let hitboxMargin = birdRect.width * 0.15;
+
+            if ((birdRect.right - hitboxMargin) > topRect.left && (birdRect.left + hitboxMargin) < topRect.right &&
+                ((birdRect.top + hitboxMargin) < topRect.bottom || (birdRect.bottom - hitboxMargin) > botRect.top)) {
+                die();
+            }
+
+            if (p.x < -20) {
+                p.topEl.remove(); p.bottomEl.remove();
+                pipes.splice(i, 1);
+            }
+        }
+
+        if (birdY < 0 || birdY > 100) die();
+        if (isPlaying) frameId = requestAnimationFrame(gameLoop);
+    }
+
+    function die() {
+        isPlaying = false;
+        cancelAnimationFrame(frameId);
+        playSound('die');
+        finalScore.innerText = score;
+        gameOverScreen.classList.remove('hidden');
+    }
+
+    board.addEventListener('pointerdown', (e) => {
+        if(e.target.id === 'restartBtn') { resetGame(); return; }
+        if(!gameOverScreen.classList.contains('hidden')) return;
+        flap();
+    });
+
+    // Тема
+    let isDark = localStorage.getItem('bg-theme') === 'dark';
+    const applyTheme = () => {
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        themeBtn.innerText = isDark ? '🌙' : '☀️';
+    };
+    themeBtn.addEventListener('click', () => {
+        isDark = !isDark;
+        localStorage.setItem('bg-theme', isDark ? 'dark' : 'light');
+        applyTheme();
+    });
+    applyTheme();
+</script>
+</body>
+</html>

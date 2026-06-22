@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="uk" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Піаніно - Brain Games</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f8;
+            --text-color: #1c2331;
+            --board-bg: #e2e8f0;
+            --tile-color: #1c2331; /* Чорні плитки у світлій темі */
+            --tile-active: #06D6A0;
+            --danger-color: #EF476F;
+            --btn-bg: #ffffff;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a2e;
+            --text-color: #e2e8f0;
+            --board-bg: #16213e;
+            --tile-color: #64b5f6; /* Яскраво-блакитні плитки для ідеальної видимості в темній темі */
+            --tile-active: #06D6A0;
+            --danger-color: #e94560;
+            --btn-bg: #2a2a4a;
+            --shadow: rgba(0, 0, 0, 0.4);
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; touch-action: none; }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100dvh;
+            overflow: hidden;
+            transition: background-color 0.3s;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: min(100%, 500px);
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .theme-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: none;
+            background-color: var(--btn-bg);
+            box-shadow: 0 4px 10px var(--shadow);
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .score-container {
+            font-size: 24px;
+            font-weight: bold;
+            background-color: var(--btn-bg);
+            padding: 10px 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 10px var(--shadow);
+        }
+
+        .board {
+            flex-grow: 1;
+            background-color: var(--board-bg);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            box-shadow: inset 0 4px 10px var(--shadow);
+        }
+
+        .start-screen {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(3px);
+            z-index: 50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 12px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        /* 4 доріжки */
+        .lane {
+            flex: 1;
+            border-right: 1px solid rgba(0,0,0,0.05);
+            position: relative;
+        }
+        .lane:last-child { border-right: none; }
+
+        .tile {
+            position: absolute;
+            width: 100%;
+            height: 25%; /* Довжина плитки */
+            background-color: var(--tile-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.1s;
+        }
+
+        .tile.clicked {
+            background-color: var(--tile-active);
+            opacity: 0.8;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background-color: var(--bg-color);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px var(--shadow);
+        }
+
+        .modal h2 { margin: 0 0 20px 0; color: var(--danger-color); font-size: 32px; }
+        .modal button {
+            padding: 15px 40px;
+            font-size: 20px;
+            border: none;
+            border-radius: 20px;
+            background-color: var(--tile-active);
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="header">
+            <button class="theme-btn" id="themeBtn">☀️</button>
+            <div class="score-container">⭐ <span id="score">0</span></div>
+        </div>
+        <div class="board" id="board">
+            <!-- Екран старту поверх поля -->
+            <div class="start-screen" id="startScreen">
+                <span>Натисни, щоб почати</span>
+            </div>
+
+            <div class="lane" id="lane-0"></div>
+            <div class="lane" id="lane-1"></div>
+            <div class="lane" id="lane-2"></div>
+            <div class="lane" id="lane-3"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="gameOverModal">
+        <div class="modal-content">
+            <h2>Поразка!</h2>
+            <p style="font-size: 20px; margin-bottom: 30px;">Твій рахунок: <strong id="finalScore">0</strong></p>
+            <button onclick="restartGame()">Спробувати ще</button>
+        </div>
+    </div>
+
+    <script>
+        // --- ТЕМА ---
+        const themeBtn = document.getElementById('themeBtn');
+        let isDark = localStorage.getItem('theme') === 'dark';
+        
+        function updateTheme() {
+            document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            themeBtn.innerText = isDark ? '🌙' : '☀️';
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+        updateTheme();
+        themeBtn.addEventListener('click', () => { isDark = !isDark; updateTheme(); });
+
+        // --- АУДІО (Web Audio API) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const notes = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25];
+
+        function playNote() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.frequency.value = notes[Math.floor(Math.random() * notes.length)];
+            osc.type = 'triangle';
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.5);
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
+
+        function playError() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.frequency.value = 150;
+            osc.type = 'sawtooth';
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.3);
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+        // --- ЛОГІКА ГРИ ---
+        const lanes = [
+            document.getElementById('lane-0'),
+            document.getElementById('lane-1'),
+            document.getElementById('lane-2'),
+            document.getElementById('lane-3')
+        ];
+        const scoreEl = document.getElementById('score');
+        const modal = document.getElementById('gameOverModal');
+        const finalScoreEl = document.getElementById('finalScore');
+        const startScreen = document.getElementById('startScreen');
+        const board = document.getElementById('board');
+
+        let score = 0;
+        let isGameOver = true;
+        let tiles = [];
+        let baseSpeed = 0.3; // Ще більше зменшено початковий темп
+        let animationId;
+        let spawnTimer = 0;
+
+        // Запуск гри по кліку на стартовий екран
+        startScreen.addEventListener('pointerdown', (e) => {
+            e.stopPropagation(); // Блокуємо подію, щоб не спрацював промах по полю
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            startScreen.style.display = 'none';
+            startGame();
+        });
+
+        function spawnTile() {
+            const laneIndex = Math.floor(Math.random() * 4);
+            const tile = document.createElement('div');
+            tile.classList.add('tile');
+            tile.style.top = '-25%'; 
+            
+            let tileObj = { el: tile, lane: laneIndex, y: -25, clicked: false };
+            
+            tile.addEventListener('pointerdown', (e) => {
+                e.stopPropagation(); // Блокуємо клік по полю
+                if(isGameOver || tileObj.clicked) return;
+
+                // Знаходимо першу не натиснуту плитку (найнижчу)
+                const expectedTile = tiles.find(t => !t.clicked);
+
+                // Якщо користувач натиснув не на ту плитку (порушив послідовність)
+                if (tileObj !== expectedTile) {
+                    gameOver();
+                    return;
+                }
+
+                tileObj.clicked = true;
+                tile.classList.add('clicked');
+                score++;
+                scoreEl.innerText = score;
+                playNote();
+            });
+
+            lanes[laneIndex].appendChild(tile);
+            tiles.push(tileObj);
+        }
+
+        function gameLoop() {
+            if (isGameOver) return;
+
+            // Більш плавна прогресія швидкості (режим "чіл")
+            let currentSpeed = baseSpeed + (score * 0.005);
+            
+            spawnTimer += currentSpeed;
+            if (spawnTimer >= 35) {
+                spawnTile();
+                spawnTimer = 0;
+            }
+
+            for (let i = 0; i < tiles.length; i++) {
+                let t = tiles[i];
+                t.y += currentSpeed;
+                t.el.style.top = t.y + '%';
+
+                if (t.y > 100) {
+                    if (!t.clicked) {
+                        gameOver(); 
+                        return;
+                    } else {
+                        t.el.remove();
+                        tiles.splice(i, 1);
+                        i--;
+                    }
+                }
+            }
+
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        function gameOver() {
+            isGameOver = true;
+            cancelAnimationFrame(animationId);
+            playError();
+            finalScoreEl.innerText = score;
+            modal.style.display = 'flex';
+        }
+
+        function startGame() {
+            isGameOver = false;
+            score = 0;
+            scoreEl.innerText = score;
+            baseSpeed = 0.3; // Встановлюємо новий зменшений темп
+            spawnTimer = -20; // Затримка перед появою першої плитки, щоб гравець встиг сфокусуватися
+            
+            tiles.forEach(t => t.el.remove());
+            tiles = [];
+            
+            gameLoop();
+        }
+
+        function restartGame() {
+            modal.style.display = 'none';
+            // Показуємо стартовий екран знову, щоб гравець був готовий
+            startScreen.style.display = 'flex';
+            
+            tiles.forEach(t => t.el.remove());
+            tiles = [];
+            score = 0;
+            scoreEl.innerText = score;
+        }
+    </script>
+</body>
+</html>
