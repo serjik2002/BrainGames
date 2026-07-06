@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.johanjimenez.folder-color": "https://github.com/JohanJimenex/unity-folder-color.git#v1.0.0",
     "com.nobi.roundedcorners": "https://github.com/kirevdokimov/Unity-UI-Rounded-Corners.git",
     "com.unity.2d.animation": "12.0.2",
     "com.unity.2d.aseprite": "2.0.2",

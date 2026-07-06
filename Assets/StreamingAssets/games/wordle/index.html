@@ -1,62 +1,26 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <title>WORDLE - Brain Games</title>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <style>
 /* ============================================================
-   RESET & BASE
-   ============================================================ */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-html, body {
-  height: 100%;
-  min-height: 100dvh;
-  background: #F8F9FA;
-  overflow: hidden;
-  touch-action: none;
-}
-
-/* ============================================================
-   GAME CONTAINER (масштабований)
-   ============================================================ */
-#game {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 1080px;
-  height: 1920px;
-  transform-origin: top left;
-  background: #F8F9FA;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: env(safe-area-inset-top, 20px) env(safe-area-inset-right, 12px) env(safe-area-inset-bottom, 20px) env(safe-area-inset-left, 12px);
-}
-
-/* ============================================================
-   CSS VARIABLES (BRAIN GAMES THEME)
+   CSS VARIABLES & BRAIN GAMES THEME
    ============================================================ */
 :root {
+  /* Light Theme (Default) */
   --bg: #F8F9FA;
   --surface: #FFFFFF;
   --border: #D3D6DA;
   --text: #1C2331;
   --text-muted: #7A8294;
-  --correct: #06D6A0;
-  --present: #FFD166;
-  --absent: #AAB2BD;
+  --correct: #06D6A0; /* Brain Games Pastel Green */
+  --present: #FFD166; /* Brain Games Pastel Yellow */
+  --absent: #AAB2BD;  /* Soft Gray */
   --key-bg: #E2E8F0;
   --key-text: #1C2331;
   --tile-border: #D3D6DA;
@@ -66,37 +30,57 @@ html, body {
   --radius: 12px;
   --font-display: 'Nunito', 'Segoe UI', sans-serif;
   --font-body: 'Nunito', Arial, sans-serif;
+  --tile-size: min(62px, calc((100vw - 40px) / 5));
+  --key-height: 58px;
+  --transition: 0.3s ease;
 }
 
 [data-theme="dark"] {
+  /* Dark Theme */
   --bg: #121213;
   --surface: #1E1E24;
   --border: #3A3A3C;
   --text: #F8F9FA;
   --text-muted: #818384;
-  --correct: #538d4e;
-  --present: #b59f3b;
-  --absent: #3a3a3c;
-  --key-bg: #818384;
+  
+  /* Класичні кольори Wordle для темної теми (як на фото) */
+  --correct: #538d4e; 
+  --present: #b59f3b; 
+  --absent: #3a3a3c;  
+  --key-bg: #818384;  
   --key-text: #ffffff;
+  
   --tile-border: #3a3a3c;
   --tile-border-active: #818384;
   --modal-bg: rgba(0, 0, 0, 0.85);
-  --accent: #538d4e;
+  --accent: #538d4e; 
 }
 
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+  transition: background var(--transition), color var(--transition);
+}
+
+button { cursor: pointer; border: none; outline: none; font-family: inherit; }
+
 /* ============================================================
-   LAYOUT (Flexbox)
+   LAYOUT (BRAIN GAMES APP CONTAINER)
    ============================================================ */
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 100dvh;
+  margin: 0 auto;
+  position: relative;
   background: var(--bg);
-  transition: background 0.3s ease, color 0.3s ease;
-  color: var(--text);
-  font-family: var(--font-body);
-  flex: 1;
+  box-shadow: 0 0 20px rgba(0,0,0,0.05);
 }
 
 /* ============================================================
@@ -106,14 +90,13 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 2% 2.5% 1.5%;
+  padding: 16px 20px;
   flex-shrink: 0;
-  min-height: 7%;
 }
 
 #header h1 {
   font-family: var(--font-display);
-  font-size: clamp(20px, 2.5vw, 48px);
+  font-size: 24px;
   font-weight: 800;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -124,30 +107,28 @@ html, body {
 .icon-btn {
   background: var(--surface);
   color: var(--text);
-  font-size: clamp(18px, 2vw, 38px);
-  width: clamp(44px, 4.5vw, 80px);
-  height: clamp(44px, 4.5vw, 80px);
+  font-size: 20px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-  transition: transform 0.1s, background 0.3s;
-  flex-shrink: 0;
+  transition: transform 0.1s, background var(--transition);
 }
 .icon-btn:active { transform: scale(0.9); }
 
 .score-badge {
   background: var(--surface);
-  padding: 2% 3%;
+  padding: 8px 16px;
   border-radius: 20px;
   font-weight: 700;
-  font-size: clamp(14px, 1.5vw, 30px);
+  font-size: 16px;
   display: flex;
   align-items: center;
   gap: 6px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-  flex-shrink: 0;
 }
 
 /* ============================================================
@@ -157,32 +138,22 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1% 2.5% 1.5%;
-  font-size: clamp(12px, 1.2vw, 24px);
+  padding: 10px 20px;
+  font-size: 13px;
   color: var(--text-muted);
   flex-shrink: 0;
-  flex-wrap: wrap;
-  gap: 4px;
 }
 
 #status-bar span { display: flex; align-items: center; gap: 4px; }
-#status-bar strong { color: var(--text); font-size: clamp(13px, 1.4vw, 28px); }
-.text-btn { 
-  background: none; 
-  color: var(--text-muted); 
-  font-weight: 700; 
-  text-decoration: underline; 
-  font-size: clamp(12px, 1.2vw, 24px);
-  padding: 4px 8px;
-  min-height: 48px;
-}
+#status-bar strong { color: var(--text); font-size: 15px; }
+.text-btn { background: none; color: var(--text-muted); font-weight: 700; text-decoration: underline; font-size: 13px;}
 
 /* ============================================================
    TOAST
    ============================================================ */
 #toast-container {
   position: absolute;
-  top: 10%;
+  top: 80px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 200;
@@ -196,59 +167,54 @@ html, body {
 .toast {
   background: var(--text);
   color: var(--bg);
-  padding: 2% 4%;
+  padding: 12px 24px;
   border-radius: 20px;
-  font-size: clamp(14px, 1.4vw, 28px);
+  font-size: 14px;
   font-weight: 700;
   opacity: 0;
   transform: translateY(-10px);
   animation: toastIn 0.2s ease forwards, toastOut 0.3s ease 1.4s forwards;
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  white-space: nowrap;
 }
 
 @keyframes toastIn { to { opacity: 1; transform: translateY(0); } }
 @keyframes toastOut { to { opacity: 0; transform: translateY(-10px); } }
 
 /* ============================================================
-   GRID (динамічний розмір)
+   GRID
    ============================================================ */
 #grid-wrapper {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1% 0;
+  padding: 10px 0;
   overflow: hidden;
-  min-height: 0;
 }
 
 #grid {
   display: grid;
-  grid-template-rows: repeat(5, 1fr);
-  grid-template-columns: repeat(5, 1fr);
-  gap: clamp(4px, 0.5vw, 12px);
-  width: min(65vmin, 70%);
-  height: min(65vmin, 70%);
-  max-width: 500px;
-  max-height: 500px;
-  aspect-ratio: 1 / 1;
+  grid-template-rows: repeat(5, var(--tile-size));
+  grid-template-columns: repeat(5, var(--tile-size));
+  gap: 6px;
 }
 
 .tile {
+  width: var(--tile-size);
+  height: var(--tile-size);
   background: var(--surface);
   border: 2px solid var(--tile-border);
   border-radius: var(--radius);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(20px, 3.5vmin, 56px);
+  font-size: calc(var(--tile-size) * 0.46);
   font-weight: 800;
   text-transform: uppercase;
   color: var(--text);
+  user-select: none;
   transition: border-color 0.2s, background 0.3s, color 0.3s;
   box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-  aspect-ratio: 1 / 1;
 }
 
 .tile[data-state="tbd"] {
@@ -256,9 +222,9 @@ html, body {
   animation: tilePopIn 0.1s ease;
 }
 
-.tile[data-state="correct"] { background: var(--correct); border-color: var(--correct); color: #fff; }
-.tile[data-state="present"] { background: var(--present); border-color: var(--present); color: #fff; }
-.tile[data-state="absent"]  { background: var(--absent);  border-color: var(--absent);  color: #fff; }
+.tile[data-state="correct"] { background: var(--correct); border-color: var(--correct); color: #fff; box-shadow: none;}
+.tile[data-state="present"] { background: var(--present); border-color: var(--present); color: #fff; box-shadow: none;}
+.tile[data-state="absent"]  { background: var(--absent);  border-color: var(--absent);  color: #fff; box-shadow: none;}
 .tile[data-state="hint"]    { background: #4CC9F0; border-color: #4CC9F0; color: #fff; }
 
 @keyframes tilePopIn {
@@ -267,7 +233,8 @@ html, body {
   100% { transform: scale(1); }
 }
 
-.tile.flip { animation: tileFlip 0.3s ease forwards; }
+.tile.flip { animation: tileFlip 0.5s ease forwards; }
+
 @keyframes tileFlip {
   0%   { transform: rotateX(0deg); }
   49%  { transform: rotateX(90deg); }
@@ -276,6 +243,7 @@ html, body {
 }
 
 .tile.bounce { animation: tileBounce 0.8s ease forwards; }
+
 @keyframes tileBounce {
   0%, 20% { transform: translateY(0); }
   40%     { transform: translateY(-15px); }
@@ -285,6 +253,7 @@ html, body {
 }
 
 .row.shake { animation: rowShake 0.4s ease; }
+
 @keyframes rowShake {
   0%, 100% { transform: translateX(0); }
   20%  { transform: translateX(-5px); }
@@ -298,44 +267,41 @@ html, body {
    ============================================================ */
 #keyboard {
   flex-shrink: 0;
-  padding: 1% 1% 2%;
-  width: 100%;
-  max-width: 600px;
-  margin: 0 auto;
+  padding: 8px 10px 20px;
 }
 
 .kb-row {
   display: flex;
   justify-content: center;
-  gap: clamp(3px, 0.4vw, 8px);
-  margin-bottom: clamp(4px, 0.5vw, 10px);
+  gap: 4px; /* Трохи зменшуємо відступ, щоб зекономити місце на мобільних */
+  margin-bottom: 8px;
   width: 100%;
 }
 
 .key {
-  height: clamp(44px, 5.5vmin, 70px);
-  min-height: 44px;
+  height: var(--key-height);
+  min-width: 0; /* КРИТИЧНО: дозволяє клавішам стискатися менше за свій контент */
+  padding: 0;   /* Прибираємо бічні відступи, щоб текст не ламався */
   background: var(--key-bg);
   color: var(--key-text);
   border-radius: 6px;
-  font-size: clamp(14px, 1.8vmin, 30px);
+  font-size: 18px;
   font-weight: 700;
   text-transform: uppercase;
   display: flex;
   align-items: center;
   justify-content: center;
+  user-select: none;
   transition: background 0.2s, transform 0.1s;
-  flex: 1;
-  min-width: 0;
-  padding: 0 2px;
+  
+  flex: 1; /* Усі звичайні літери беруть однакову 1 долю ширини */
 }
 
 .key.wide { 
-  flex: 1.5; 
-  font-size: clamp(12px, 1.5vmin, 26px);
-  min-width: 48px;
+  flex: 1.5; /* ENTER та Backspace будуть рівно в півтора раза ширші за звичайну літеру */
+  max-width: none; 
+  font-size: 16px; /* Робимо стрілочку візуально трохи більшою */
 }
-
 .key:active { transform: scale(0.92); }
 
 .key[data-state="correct"] { background: var(--correct); color: #fff; }
@@ -343,14 +309,13 @@ html, body {
 .key[data-state="absent"]  { background: var(--absent);  color: #fff; }
 
 /* ============================================================
-   MODALS
+   MODALS (BRAIN GAMES STYLE)
    ============================================================ */
 .modal-overlay {
   position: absolute;
   inset: 0;
   background: var(--modal-bg);
   backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -358,7 +323,7 @@ html, body {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s;
-  padding: 5%;
+  padding: 20px;
 }
 
 .modal-overlay.open {
@@ -370,168 +335,106 @@ html, body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 24px;
-  padding: clamp(20px, 3%, 40px) clamp(16px, 2.5%, 32px);
+  padding: 30px 24px;
   width: 100%;
-  max-width: 400px;
-  transform: translateY(30px) scale(0.95);
+  max-width: 360px;
+  transform: translateY(30px);
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   box-shadow: 0 10px 40px rgba(0,0,0,0.1);
   text-align: center;
-  position: relative;
-  max-height: 90vh;
-  overflow-y: auto;
 }
 
-.modal-overlay.open .modal { transform: translateY(0) scale(1); }
+.modal-overlay.open .modal { transform: translateY(0); }
 
 .modal h2 {
-  font-size: clamp(20px, 2.5vw, 36px);
+  font-size: 22px;
   font-weight: 800;
-  margin-bottom: clamp(16px, 2%, 30px);
+  margin-bottom: 20px;
   color: var(--text);
 }
 
 .modal-close {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 16px;
+  right: 16px;
   background: var(--key-bg);
   color: var(--text);
-  font-size: clamp(16px, 1.5vw, 28px);
-  width: clamp(36px, 4vw, 56px);
-  height: clamp(36px, 4vw, 56px);
+  font-size: 16px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  min-height: 44px;
-  min-width: 44px;
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: clamp(10px, 1.5%, 20px);
-  margin-bottom: clamp(16px, 2%, 30px);
+  gap: 12px;
+  margin-bottom: 24px;
 }
 
 .stat-box {
   background: var(--bg);
-  padding: clamp(12px, 1.5%, 24px) clamp(8px, 1%, 16px);
+  padding: 16px 10px;
   border-radius: 16px;
 }
 
-.stat-box .num { 
-  font-size: clamp(22px, 3vw, 40px); 
-  font-weight: 800; 
-  color: var(--accent); 
-}
-.stat-box .lbl { 
-  font-size: clamp(11px, 1.2vw, 18px); 
-  color: var(--text-muted); 
-  margin-top: 4px; 
-  font-weight: 700; 
-}
-
-.btn-primary, .btn-secondary {
-  display: block;
-  width: 100%;
-  padding: clamp(14px, 1.8%, 24px);
-  border-radius: 16px;
-  font-size: clamp(15px, 1.8vw, 26px);
-  font-weight: 800;
-  text-align: center;
-  transition: transform 0.1s;
-  min-height: 56px;
-}
+.stat-box .num { font-size: 26px; font-weight: 800; color: var(--accent); }
+.stat-box .lbl { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-weight: 700; }
 
 .btn-primary {
+  display: block;
+  width: 100%;
+  padding: 16px;
   background: var(--accent);
   color: #fff;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 800;
+  text-align: center;
+  margin-top: 10px;
   box-shadow: 0 4px 15px rgba(6, 214, 160, 0.3);
+  transition: transform 0.1s;
 }
 .btn-primary:active { transform: scale(0.96); }
 
 .btn-secondary {
+  display: block;
+  width: 100%;
+  padding: 16px;
   background: var(--bg);
   color: var(--text);
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 800;
   margin-top: 12px;
+  transition: transform 0.1s;
 }
 .btn-secondary:active { transform: scale(0.96); }
 
-.result-word { 
-  margin: 10px 0 24px; 
-  font-size: clamp(13px, 1.4vw, 22px); 
-  color: var(--text-muted); 
-}
-.result-word strong { 
-  font-size: clamp(24px, 3vw, 48px); 
-  color: var(--text); 
-  display: block; 
-  margin-top: 8px; 
-  letter-spacing: 2px;
-}
+.result-word { margin: 10px 0 24px; font-size: 14px; color: var(--text-muted); }
+.result-word strong { font-size: 28px; color: var(--text); display: block; margin-top: 8px; letter-spacing: 2px;}
 
 /* Hints */
 .hint-options { display: flex; flex-direction: column; gap: 10px; }
 .hint-option {
-  padding: clamp(14px, 1.5%, 24px);
+  padding: 16px;
   background: var(--bg);
   border-radius: 16px;
   text-align: left;
   color: var(--text);
   transition: transform 0.1s;
-  min-height: 56px;
 }
 .hint-option:active { transform: scale(0.98); }
 .hint-option.disabled { opacity: 0.5; pointer-events: none; }
-.hint-option-title { font-weight: 800; font-size: clamp(14px, 1.5vw, 24px); margin-bottom: 4px; }
-.hint-option-desc  { color: var(--text-muted); font-size: clamp(11px, 1.2vw, 18px); }
+.hint-option-title { font-weight: 800; font-size: 15px; margin-bottom: 4px; }
+.hint-option-desc  { color: var(--text-muted); font-size: 12px; }
 
-/* ============================================================
-   АДАПТИВ ДЛЯ МАЛЕНЬКИХ ЕКРАНІВ
-   ============================================================ */
-@media (max-width: 480px) {
-  #header h1 { font-size: clamp(16px, 4vw, 24px); }
-  .score-badge { font-size: clamp(12px, 3vw, 16px); padding: 4px 10px; }
-  #status-bar { font-size: clamp(10px, 2.8vw, 14px); }
-  .key { font-size: clamp(11px, 2.8vw, 16px); min-height: 38px; height: clamp(38px, 7vmin, 50px); }
-  .key.wide { font-size: clamp(10px, 2.5vw, 14px); }
-  .tile { font-size: clamp(14px, 4.5vmin, 24px); }
-  .modal { padding: 16px; }
-  .stat-box .num { font-size: clamp(18px, 5vw, 28px); }
-  .result-word strong { font-size: clamp(20px, 6vw, 32px); }
-}
-
-@media (max-width: 380px) {
-  .key { font-size: clamp(9px, 2.5vw, 12px); min-height: 34px; height: clamp(34px, 6vmin, 42px); }
-  .key.wide { font-size: clamp(8px, 2.2vw, 11px); }
-  #grid { gap: 3px; }
-  .tile { border-width: 1.5px; }
-}
-
-/* ============================================================
-   ПЛАНШЕТИ
-   ============================================================ */
-@media (min-width: 768px) {
-  #game { 
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    max-width: 700px;
-    margin: 0 auto;
-    transform: none !important;
-  }
-  .app-container { border-radius: 20px; overflow: hidden; box-shadow: 0 0 40px rgba(0,0,0,0.1); }
-}
-
-/* ============================================================
-   СКРИПТ ДЛЯ МАСШТАБУВАННЯ
-   ============================================================ */
 </style>
 </head>
 <body>
-<div id="game">
 <div class="app-container">
   
   <div id="header">
@@ -559,7 +462,7 @@ html, body {
   </div>
 
   <div class="modal-overlay" id="modal-gameover">
-    <div class="modal">
+    <div class="modal" style="position:relative">
       <h2 id="gameover-title">ГРУ ЗАВЕРШЕНО</h2>
       <div class="result-word" id="result-word"></div>
       <div class="stats-grid" id="gameover-stats"></div>
@@ -568,7 +471,7 @@ html, body {
   </div>
 
   <div class="modal-overlay" id="modal-stats">
-    <div class="modal">
+    <div class="modal" style="position:relative">
       <button class="modal-close" id="close-stats">✕</button>
       <h2>Статистика</h2>
       <div class="stats-grid" id="stats-grid"></div>
@@ -577,60 +480,19 @@ html, body {
   </div>
 
   <div class="modal-overlay" id="modal-hint">
-    <div class="modal">
+    <div class="modal" style="position:relative">
       <button class="modal-close" id="close-hint">✕</button>
       <h2>Підказки</h2>
-      <p style="font-size:clamp(12px,1.2vw,22px); color:var(--text-muted); margin-bottom:16px;">Залишилось: <strong id="hint-count-modal">3</strong></p>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Залишилось: <strong id="hint-count-modal">3</strong></p>
       <div class="hint-options" id="hint-options"></div>
     </div>
   </div>
 
 </div>
-</div>
 
 <script>
 /* ============================================================
-   МАСШТАБУВАННЯ ГРИ
-   ============================================================ */
-function scaleGame() {
-  const game = document.getElementById('game');
-  const BASE_WIDTH = 1080;
-  const BASE_HEIGHT = 1920;
-  
-  // Перевіряємо, чи це мобільний пристрій (ширина менше 768px)
-  if (window.innerWidth >= 768) {
-    game.style.transform = 'none';
-    game.style.width = '100vw';
-    game.style.height = '100vh';
-    game.style.maxWidth = '700px';
-    game.style.position = 'relative';
-    return;
-  }
-  
-  // Для мобільних - масштабуємо
-  const scaleX = window.innerWidth / BASE_WIDTH;
-  const scaleY = window.innerHeight / BASE_HEIGHT;
-  const scale = Math.min(scaleX, scaleY, 1.2);
-  
-  game.style.transform = `scale(${scale})`;
-  game.style.transformOrigin = 'top left';
-  game.style.width = BASE_WIDTH + 'px';
-  game.style.height = BASE_HEIGHT + 'px';
-  game.style.position = 'absolute';
-  game.style.left = '50%';
-  game.style.top = '50%';
-  game.style.marginLeft = -(BASE_WIDTH / 2) + 'px';
-  game.style.marginTop = -(BASE_HEIGHT / 2) + 'px';
-  game.style.maxWidth = 'none';
-}
-
-// Запускаємо при завантаженні та зміні розміру
-window.addEventListener('DOMContentLoaded', scaleGame);
-window.addEventListener('resize', scaleGame);
-window.addEventListener('orientationchange', () => setTimeout(scaleGame, 200));
-
-/* ============================================================
-   AUDIO ENGINE
+   AUDIO ENGINE (BRAIN GAMES)
    ============================================================ */
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playSound(type) {
@@ -652,9 +514,9 @@ function playSound(type) {
     osc.type = 'triangle';
     const now = audioCtx.currentTime;
     osc.frequency.setValueAtTime(400, now);
-    osc.frequency.setValueAtTime(523.25, now + 0.1);
-    osc.frequency.setValueAtTime(659.25, now + 0.2);
-    osc.frequency.setValueAtTime(783.99, now + 0.3);
+    osc.frequency.setValueAtTime(523.25, now + 0.1); // C5
+    osc.frequency.setValueAtTime(659.25, now + 0.2); // E5
+    osc.frequency.setValueAtTime(783.99, now + 0.3); // G5
     gain.gain.setValueAtTime(0.2, now);
     gain.gain.linearRampToValueAtTime(0, now + 0.6);
     osc.start();
@@ -667,21 +529,30 @@ function playSound(type) {
    ============================================================ */
 class WordDictionary {
   constructor() {
-    this.words = [];
+    this.words = []; // Спочатку масив порожній
   }
 
+  // Нова асинхронна функція для завантаження файлу
   async loadFromFile(filename = 'words.txt') {
     try {
       const response = await fetch(filename);
       if (!response.ok) throw new Error('Файл не знайдено');
+      
       const text = await response.text();
+      
+      // Розбиваємо текст по пробілах або переносах рядків (\s+)
+      // Залишаємо тільки слова з 5 літер
       this.words = text.split(/\s+/)
         .filter(w => w.length === 5 && /^[a-zA-Zа-яА-ЯіІїЇєЄ]+$/.test(w))
         .map(w => w.toUpperCase());
+
+      // Прибираємо дублікати
       this.words = [...new Set(this.words)];
+      
     } catch (error) {
       console.error("Помилка завантаження слів:", error);
-      this.words = ["BRAIN", "GAMES", "APPLE", "SMART", "LOGIC", "WORLD", "HELLO", "PEACE", "LIGHT", "MAGIC"];
+      // Резервні слова, якщо файл не завантажився
+      this.words = ["BRAIN", "GAMES", "APPLE", "SMART", "LOGIC"];
     }
   }
 
@@ -749,20 +620,25 @@ class Grid {
     tile.textContent = letter;
     tile.dataset.state = letter ? 'tbd' : '';
   }
-  async revealRow(row, results, onTileReveal) {
+async revealRow(row, results, onTileReveal) {
     const rowTiles = this.tiles[row];
     for (let c = 0; c < this.cols; c++) {
       const tile = rowTiles[c];
       const state = results[c];
-      const delay = c * 10;
+      
+      // Зменшено затримку між переворотами карток (було 300, стало 100)
+      const delay = c * 10; 
 
       await new Promise(resolve => {
         setTimeout(() => {
           tile.classList.add('flip');
+          
+          // Змінюємо колір рівно на екваторі анімації (150мс - це половина від 0.3s)
           setTimeout(() => {
             tile.dataset.state = state;
             if (onTileReveal) onTileReveal(c, state, tile.textContent);
           }, 150);
+          
           tile.addEventListener('animationend', () => { 
             tile.classList.remove('flip'); 
             resolve(); 
@@ -798,14 +674,17 @@ class Keyboard {
     this.rows = [['Q','W','E','R','T','Y','U','I','O','P'], ['A','S','D','F','G','H','J','K','L'], ['ENTER','Z','X','C','V','B','N','M','⌫']];
     this.keyMap = {};
   }
-  build() {
+build() {
     this.rows.forEach((row, ri) => {
       const el = document.getElementById(`kb-row-${ri}`);
       el.innerHTML = '';
       row.forEach(k => {
         const btn = document.createElement('button');
         btn.className = 'key' + (k === 'ENTER' || k === '⌫' ? ' wide' : '');
-        btn.textContent = (k === 'ENTER') ? '➔' : k;
+        
+        // Оцієї заміни достатньо: на екрані буде стрілочка, а всередині коду — ENTER
+        btn.textContent = (k === 'ENTER') ? '➔' : k; 
+        
         btn.dataset.key = k;
         btn.addEventListener('touchstart', e => { e.preventDefault(); this.onKey(k); }, { passive: false });
         btn.addEventListener('mousedown', e => { e.preventDefault(); this.onKey(k); });
@@ -838,12 +717,15 @@ class GameManager {
     this.animating = false;
   }
 
-  async init() {
+async init() {
     this.applyTheme();
     this.grid.build();
     this.kb.build();
     this.bindEvents();
+    
+    // Чекаємо, поки завантажаться слова з файлу
     await this.dict.loadFromFile('words.txt');
+    
     this.newGame();
   }
 
@@ -1006,7 +888,7 @@ class GameManager {
       const notInWord = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(l => !word.includes(l));
       for(let i = 0; i < 3; i++) {
         const l = notInWord.splice(Math.floor(Math.random() * notInWord.length), 1)[0];
-        if (l) this.kb.updateKey(l, 'absent');
+        this.kb.updateKey(l, 'absent');
       }
     }
     this.renderStatus(); this.closeModal('modal-hint');

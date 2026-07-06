@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="uk" data-theme="light">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Стрілочки - Brain Games</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Arrows - Brain Games</title>
     <!-- Підключення confetti для салюту -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
@@ -58,104 +58,139 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
+
         body {
             font-family: 'Nunito', sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            min-height: 100dvh;
             overflow: hidden;
             transition: background-color 0.3s, color 0.3s;
         }
 
+        /* Корневой контейнер — все размеры ставит JS (calcLayout) */
         .app-container {
-            width: 100%;
-            /* Ідеальне адаптивне обмеження ширини */
-            max-width: min(100%, calc(100dvh - 220px));
-            padding: 20px;
+            position: fixed;
+            inset: 0;
+            padding-top: calc(var(--margin) + env(safe-area-inset-top, 0px));
+            padding-bottom: calc(var(--margin) + env(safe-area-inset-bottom, 0px));
+            padding-left: calc(var(--margin) + env(safe-area-inset-left, 0px));
+            padding-right: calc(var(--margin) + env(safe-area-inset-right, 0px));
             display: flex;
             flex-direction: column;
-            align-items: stretch;
-            flex-grow: 1;
+            align-items: center;
+            gap: var(--gap);
         }
 
-        header {
+        /* Верхняя панель */
+        .header {
+            width: 100%;
+            max-width: calc(var(--board-size) + 2px);
+            height: var(--header-h);
+            flex: 0 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            gap: 12px;
+            position: relative;
+        }
+
+        /* Кнопка назад */
+        .back-btn {
+            width: var(--btn-size);
+            height: var(--btn-size);
+            min-width: var(--btn-size);
+            border-radius: 50%;
+            background-color: var(--panel-bg);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            border: none;
+            outline: none;
+            color: var(--text-main);
+            transition: transform 0.1s, background-color 0.3s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .back-btn:active { transform: scale(0.9); }
+        .back-btn svg { width: var(--icon-size); height: var(--icon-size); }
+
+        /* Название игры по центру (абсолютное позиционирование) */
+        .header-title {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: calc(100% - var(--btn-size) * 2 - 80px);
+            font-size: var(--title-size);
+            font-weight: 800;
+            letter-spacing: 1px;
+            line-height: 1;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            pointer-events: none;
+        }
+
+        /* Правая группа: уровень + тема */
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .theme-toggle {
-            width: 50px;
-            height: 50px;
+            width: var(--btn-size);
+            height: var(--btn-size);
+            min-width: var(--btn-size);
             border-radius: 50%;
             background-color: var(--panel-bg);
             border: none;
-            box-shadow: 0 4px 15px var(--shadow-color);
+            box-shadow: 0 4px 12px var(--shadow-color);
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
             transition: transform 0.2s, background-color 0.3s;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .theme-toggle:active {
-            transform: scale(0.9);
-        }
+        .theme-toggle:active { transform: scale(0.9); }
+        .theme-toggle svg { width: var(--icon-size); height: var(--icon-size); color: var(--text-main); }
 
-        .theme-toggle svg {
-            width: 24px;
-            height: 24px;
-            fill: var(--text-main);
-        }
-
-        .score-panel {
+        .level-panel {
             background-color: var(--panel-bg);
-            padding: 10px 20px;
-            border-radius: 25px;
-            box-shadow: 0 4px 15px var(--shadow-color);
+            padding: 0.4em 0.8em;
+            border-radius: 1.5em;
+            box-shadow: 0 4px 12px var(--shadow-color);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 0.3em;
             font-weight: 800;
-            font-size: 20px;
+            font-size: var(--score-size);
+            white-space: nowrap;
             transition: background-color 0.3s;
         }
 
-        .score-panel span {
-            color: var(--text-main);
-        }
+        .level-panel span { color: var(--text-main); }
 
-        .title-container {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        h1 {
-            font-size: 32px;
-            font-weight: 800;
-            margin-bottom: 5px;
-        }
-
-        p.subtitle {
-            font-size: 14px;
-            color: var(--text-sub);
-        }
-
-        /* Ігрове поле */
+        /* Игровое поле */
         .board-wrapper {
-            width: 100%;
-            aspect-ratio: 1;
+            width: var(--board-size);
+            height: var(--board-size);
+            flex: 0 0 auto;
+            margin: auto 0;
             background-color: var(--board-bg);
-            border-radius: 20px;
-            padding: 10px;
+            border-radius: 4%;
+            padding: 2%;
             box-shadow: inset 0 4px 10px rgba(0,0,0,0.05);
             position: relative;
-            overflow: visible; /* Щоб блоки могли гарно вилітати */
+            overflow: visible;
             transition: background-color 0.3s;
         }
 
@@ -178,7 +213,7 @@
         .block {
             width: 100%;
             height: 100%;
-            border-radius: 12px;
+            border-radius: 20px;
             box-shadow: 0 6px 0 var(--block-shadow);
             display: flex;
             justify-content: center;
@@ -248,12 +283,13 @@
 
         .modal {
             background-color: var(--panel-bg);
-            padding: 40px;
-            border-radius: 25px;
+            padding: var(--modal-padding);
+            border-radius: var(--modal-radius);
             text-align: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             transform: translateY(50px);
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 90vw;
         }
 
         .overlay.active .modal {
@@ -261,24 +297,25 @@
         }
 
         .modal h2 {
-            font-size: 32px;
-            margin-bottom: 10px;
+            font-size: var(--modal-title-size);
+            margin-bottom: 0.3em;
             color: var(--text-main);
         }
 
         .modal p {
             color: var(--text-sub);
-            margin-bottom: 25px;
+            font-size: var(--modal-text-size);
+            margin-bottom: 0.8em;
         }
 
         .btn-next {
             background-color: var(--color-3);
             color: white;
             border: none;
-            padding: 15px 40px;
-            font-size: 20px;
+            padding: 0.8em 2em;
+            font-size: var(--modal-btn-size);
             font-weight: bold;
-            border-radius: 20px;
+            border-radius: 0.8em;
             cursor: pointer;
             box-shadow: 0 6px 0 rgba(0,0,0,0.15);
             transition: transform 0.1s, box-shadow 0.1s;
@@ -293,25 +330,21 @@
 <body>
 
 <div class="app-container">
-    <header>
-        <button class="theme-toggle" id="theme-btn">
-            <!-- Іконка Сонця (по замовчуванню для світлої) -->
-            <svg id="icon-sun" viewBox="0 0 24 24" style="display: none;">
-                <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18.75a.75.75 0 01.75.75V21.75a.75.75 0 01-1.5 0V19.5a.75.75 0 01.75-.75zM6.166 17.834a.75.75 0 00-1.06 1.06l1.59 1.591a.75.75 0 101.061-1.06l-1.59-1.591zM4.5 12a.75.75 0 01-.75.75H1.5a.75.75 0 010-1.5h2.25a.75.75 0 01.75.75zM6.166 6.166a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z"/>
-            </svg>
-            <!-- Іконка Місяця -->
-            <svg id="icon-moon" viewBox="0 0 24 24">
-                <path d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"/>
-            </svg>
+    <!-- Top bar -->
+    <div class="header">
+        <button class="back-btn" id="backBtn" onclick="goBack()" title="Back">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
         </button>
-        <div class="score-panel">
-            ⭐ <span id="level-indicator">Рівень 1</span>
+        <span class="header-title">Arrows</span>
+        <div class="header-right">
+            <!--div class="level-panel">
+                ⭐ <span id="level-indicator">Level 1</span>
+            </div-->
+            <button class="theme-toggle" id="theme-btn" title="Change theme">
+                <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </button>
         </div>
-    </header>
-
-    <div class="title-container">
-        <h1>Стрілочки</h1>
-        <p class="subtitle">Знайди вільний шлях і розбери все поле</p>
     </div>
 
     <div class="board-wrapper">
@@ -321,13 +354,108 @@
 
 <div class="overlay" id="win-overlay">
     <div class="modal">
-        <h2>Рівень пройдено!</h2>
-        <p>Твоє просторове мислення вражає 🧠</p>
-        <button class="btn-next" onclick="nextLevel()">Наступний рівень</button>
+        <h2>Level Complete!</h2>
+        <p>Your spatial thinking is impressive! 🧠</p>
+        <button class="btn-next" onclick="nextLevel()">Next Level</button>
     </div>
 </div>
 
 <script>
+    // ================================================================
+    // АДАПТИВНАЯ ВЁРСТКА (как в block_blast)
+    // ================================================================
+
+    const LAYOUT_CFG = {
+        portrait: {
+            marginRatio: 0.025,
+            gapRatio: 0.018,
+            headerRatio: 0.075,
+            headerMinRatio: 0.05, headerMaxRatio: 0.10,
+        },
+        landscape: {
+            marginRatio: 0.035,
+            gapRatio: 0.03,
+            headerRatio: 0.12,
+            headerMinRatio: 0.06, headerMaxRatio: 0.14,
+        }
+    };
+
+    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+    let safeInsetsCache = { top: 0, bottom: 0, left: 0, right: 0 };
+    (function measureSafeInsets() {
+        const probe = document.createElement('div');
+        probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;' +
+            'padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);' +
+            'padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);' +
+            'visibility:hidden;';
+        document.body.appendChild(probe);
+        const cs = getComputedStyle(probe);
+        safeInsetsCache = {
+            top: parseFloat(cs.paddingTop) || 0,
+            bottom: parseFloat(cs.paddingBottom) || 0,
+            left: parseFloat(cs.paddingLeft) || 0,
+            right: parseFloat(cs.paddingRight) || 0
+        };
+        probe.remove();
+    })();
+
+    function calcLayout() {
+        const insets = safeInsetsCache;
+        const availW = window.innerWidth - insets.left - insets.right;
+        const availH = window.innerHeight - insets.top - insets.bottom;
+        const isPortrait = availH >= availW;
+        const cfg = isPortrait ? LAYOUT_CFG.portrait : LAYOUT_CFG.landscape;
+
+        const margin = Math.round(availH * cfg.marginRatio);
+        const gap = Math.round(availH * cfg.gapRatio);
+        const headerH = Math.round(clamp(availH * cfg.headerRatio, availH * cfg.headerMinRatio, availH * cfg.headerMaxRatio));
+
+        const usableH = availH - margin * 2 - headerH - gap;
+        const usableW = availW - margin * 2;
+        const boardSize = Math.max(180, Math.floor(Math.min(usableH, usableW)));
+
+        return { margin, gap, headerH, boardSize };
+    }
+
+    function applyLayout() {
+        const L = calcLayout();
+        const root = document.documentElement;
+
+        root.style.setProperty('--margin', L.margin + 'px');
+        root.style.setProperty('--gap', L.gap + 'px');
+        root.style.setProperty('--header-h', L.headerH + 'px');
+        root.style.setProperty('--board-size', L.boardSize + 'px');
+
+        // Кнопки/иконки/шрифты — доля от высоты хедера
+        root.style.setProperty('--btn-size', Math.round(L.headerH * 0.68) + 'px');
+        root.style.setProperty('--icon-size', Math.round(L.headerH * 0.36) + 'px');
+        root.style.setProperty('--title-size', Math.round(L.headerH * 0.34) + 'px');
+        root.style.setProperty('--score-size', Math.round(L.headerH * 0.28) + 'px');
+
+        // Модальное окно — доля от размера доски
+        root.style.setProperty('--modal-padding', Math.round(L.boardSize * 0.08) + 'px');
+        root.style.setProperty('--modal-radius', Math.round(L.boardSize * 0.04) + 'px');
+        root.style.setProperty('--modal-title-size', Math.round(L.boardSize * 0.07) + 'px');
+        root.style.setProperty('--modal-text-size', Math.round(L.boardSize * 0.04) + 'px');
+        root.style.setProperty('--modal-btn-size', Math.round(L.boardSize * 0.045) + 'px');
+    }
+
+    applyLayout();
+
+    // Надёжный ресайз: ResizeObserver + fallback на resize/orientationchange
+    let layoutResizeTimeout;
+    function scheduleLayout() {
+        clearTimeout(layoutResizeTimeout);
+        layoutResizeTimeout = setTimeout(applyLayout, 30);
+    }
+    if (window.ResizeObserver) {
+        new ResizeObserver(scheduleLayout).observe(document.documentElement);
+    } else {
+        window.addEventListener('resize', scheduleLayout);
+        window.addEventListener('orientationchange', scheduleLayout);
+    }
+
     // --- АУДІО ДВИЖОК (Web Audio API) ---
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     let audioCtx;
@@ -388,6 +516,16 @@
         }
     }
 
+    // --- КНОПКА НАЗАД ---
+    function goBack() {
+        if (typeof unityInstance !== 'undefined' && unityInstance) {
+            unityInstance.SendMessage('WebViewBridge', 'OnBackPressed');
+        }
+        if (window.history.length > 1) {
+            window.history.back();
+        }
+    }
+
     // --- ЛОГІКА ТЕМ (Світла/Темна) ---
     const themeBtn = document.getElementById('theme-btn');
     const iconSun = document.getElementById('icon-sun');
@@ -417,13 +555,14 @@
 
     // --- ЛОГІКА ГРИ "СТРІЛОЧКИ" ---
     const boardEl = document.getElementById('board');
-    const levelText = document.getElementById('level-indicator');
+    //const levelText = document.getElementById('level-indicator');
     const winOverlay = document.getElementById('win-overlay');
 
     let currentLevel = 1;
     let gridSize = 3;
     let logicalGrid = []; // 2D масив для перевірок [row][col]
     let activeBlocksCount = 0;
+    let hasWon = false;
     
     const DIRS = ['UP', 'RIGHT', 'DOWN', 'LEFT'];
     const COLORS = ['var(--color-1)', 'var(--color-2)', 'var(--color-3)', 'var(--color-4)', 'var(--color-5)', 'var(--color-6)', 'var(--color-7)'];
@@ -439,14 +578,15 @@
     // SVG стрілки (товста, красива)
     const arrowSVG = `
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L3 11h5v11h8V11h5L12 2z"/>
+            <path d="M12 2L3 11h5v11h8V11h5L12 2z" stroke-linejoin="round"/>
         </svg>
     `;
 
     // Запуск гри
     function initGame() {
         winOverlay.classList.remove('active');
-        levelText.innerText = `Рівень ${currentLevel}`;
+        hasWon = false;
+        //levelText.innerText = `Level ${currentLevel}`;
         boardEl.innerHTML = '';
         activeBlocksCount = 0;
 
@@ -610,13 +750,16 @@
     }
 
     function triggerWin() {
+        if (hasWon) return;
+        hasWon = true;
         playSound('win');
         
-        // Фірмовий салют у пастельних тонах Brain Games
+        // Фирменный салют — масштабируется под размер доски
+        const boardSz = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--board-size')) || 400;
         const colors = ['#EF476F', '#FFD166', '#06D6A0', '#118AB2'];
         confetti({
-            particleCount: 150,
-            spread: 80,
+            particleCount: Math.round(boardSz * 0.35),
+            spread: Math.round(boardSz * 0.18),
             origin: { y: 0.6 },
             colors: colors
         });

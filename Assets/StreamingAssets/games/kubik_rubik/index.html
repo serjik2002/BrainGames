@@ -1,36 +1,21 @@
 <!DOCTYPE html>
-<html lang="uk" data-theme="light">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Кубик Рубіка 3D - Brain Games</title>
-    
-    <!-- Підключення шрифту -->
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Підключення Three.js для 3D графіки -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Rubik's Cube 3D - Brain Games</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- Підключення canvas-confetti для салюту -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-
     <style>
-        /* CSS Змінні для світлої та темної теми */
         :root {
-            /* Базові кольори фону та тексту */
-            --bg-color: #f4f7fb;
-            --text-main: #1C2331;
-            --text-sub: #7A8294;
-            --board-bg: #ffffff;
-            --board-shadow: rgba(0, 0, 0, 0.05);
-            --modal-bg: rgba(255, 255, 255, 0.95);
-            
-            /* Елементи UI */
-            --btn-bg: #ffffff;
-            --btn-shadow: rgba(0, 0, 0, 0.08);
-            --btn-green: #56C596;
-            --btn-green-shadow: #3e9a74;
-            
-            /* Пастельні кольори для кубика (світла тема) */
+            --bg-color: #F8F9FA;
+            --text-color: #1C2331;
+            --text-secondary: #7A8294;
+            --board-bg: #E2E8F0;
+            --btn-bg: #FFFFFF;
+            --btn-shadow: rgba(0, 0, 0, 0.05);
+            --primary: #06D6A0;
+
             --cube-white: #ffffff;
             --cube-yellow: #ffec99;
             --cube-red: #ff8787;
@@ -38,23 +23,35 @@
             --cube-green: #69db7c;
             --cube-blue: #74c0fc;
             --cube-inner: #1a1a1a;
+
+            /* fallback */
+            --margin: 16px;
+            --gap: 12px;
+            --header-h: 64px;
+            --board-size: 320px;
+            --btn-size: 44px;
+            --icon-size: 22px;
+            --title-size: 22px;
+            --board-padding: 6px;
+            --board-radius: 20px;
+            --scramble-size: 18px;
+            --scramble-radius: 16px;
+            --modal-padding: 24px;
+            --modal-radius: 18px;
+            --modal-title-size: 24px;
+            --modal-text-size: 16px;
+            --modal-btn-size: 18px;
         }
 
         [data-theme="dark"] {
-            /* Темна тема */
-            --bg-color: #121826;
-            --text-main: #f0f2f5;
-            --text-sub: #a0a8b8;
-            --board-bg: #1e293b;
-            --board-shadow: rgba(0, 0, 0, 0.3);
-            --modal-bg: rgba(30, 41, 59, 0.95);
-            
-            --btn-bg: #2d3748;
+            --bg-color: #1A1A24;
+            --text-color: #F8F9FA;
+            --text-secondary: #A0AABF;
+            --board-bg: #2A2A38;
+            --btn-bg: #2A2A38;
             --btn-shadow: rgba(0, 0, 0, 0.2);
-            --btn-green: #48a57e;
-            --btn-green-shadow: #2d6b50;
+            --primary: #059669;
 
-            /* Приглушені кольори кубика для темної теми */
             --cube-white: #e2e8f0;
             --cube-yellow: #d8c67c;
             --cube-red: #d96c6c;
@@ -68,266 +65,393 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            user-select: none; /* Заборона виділення тексту */
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
             -webkit-tap-highlight-color: transparent;
         }
 
-        body {
-            font-family: 'Nunito', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100dvh; /* Жорстка висота з підтримкою динамічних екранів */
-            margin: 0;
-            transition: background-color 0.3s ease, color 0.3s ease;
-            overflow: hidden; /* Тотальна заборона скролу сторінки */
+        html, body {
+            width: 100%;
+            height: 100%;
         }
 
-        /* Універсальний контейнер - єдиний регулятор ширини */
+        body {
+            font-family: 'Nunito', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
         .app-container {
-            width: 100%;
-            /* Ширина обчислюється так, щоб висота завжди ідеально вписувалась в екран */
-            max-width: min(500px, calc(100dvh - 240px)); 
-            margin: 0 auto;
-            padding: 15px;
+            position: fixed;
+            inset: 0;
+            padding-top: calc(var(--margin) + env(safe-area-inset-top, 0px));
+            padding-bottom: calc(var(--margin) + env(safe-area-inset-bottom, 0px));
+            padding-left: calc(var(--margin) + env(safe-area-inset-left, 0px));
+            padding-right: calc(var(--margin) + env(safe-area-inset-right, 0px));
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            align-items: center;
+            gap: var(--gap);
         }
 
-        /* Верхня панель (Тема + Очки) */
-        .top-bar {
+        /* Header */
+        .header {
+            width: 100%;
+            max-width: calc(var(--board-size) + 2px);
+            height: var(--header-h);
+            flex: 0 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            height: 44px;
-            width: 100%;
+            gap: 12px;
+            position: relative;
         }
 
-        .icon-btn {
-            width: 44px;
-            height: 44px;
+        .back-btn {
+            width: var(--btn-size);
+            height: var(--btn-size);
+            min-width: var(--btn-size);
             border-radius: 50%;
-            background: var(--btn-bg);
-            border: none;
-            box-shadow: 0 4px 10px var(--btn-shadow);
+            background-color: var(--btn-bg);
+            box-shadow: 0 4px 12px var(--btn-shadow);
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
+            border: none;
+            outline: none;
+            color: var(--text-color);
             transition: transform 0.1s, background-color 0.3s;
         }
-        .icon-btn:active { transform: scale(0.95); }
-        .icon-btn svg {
-            width: 24px;
-            height: 24px;
-            fill: var(--text-main);
-            transition: fill 0.3s;
+
+        .back-btn:active { transform: scale(0.9); }
+        .back-btn svg { width: var(--icon-size); height: var(--icon-size); }
+
+        .header-title {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: calc(100% - var(--btn-size) * 2 - 40px);
+            font-size: var(--title-size);
+            font-weight: 900;
+            letter-spacing: 2px;
+            line-height: 1;
+            color: var(--text-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            pointer-events: none;
         }
 
-        .score-pill {
-            background: var(--btn-bg);
-            padding: 8px 16px;
-            border-radius: 25px;
+        .header-right {
             display: flex;
             align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 10px var(--btn-shadow);
-            font-weight: 700;
-            font-size: 18px;
-            transition: background-color 0.3s;
-        }
-        .score-pill svg {
-            width: 20px;
-            height: 20px;
-            fill: #ffd43b; /* Жовта зірочка */
+            gap: 6px;
         }
 
-        /* Заголовок */
-        .header {
-            text-align: left;
-            margin-bottom: 0px;
+        .theme-toggle {
+            width: var(--btn-size);
+            height: var(--btn-size);
+            min-width: var(--btn-size);
+            border-radius: 50%;
+            background-color: var(--btn-bg);
+            box-shadow: 0 4px 12px var(--btn-shadow);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            border: none;
+            outline: none;
+            color: var(--text-color);
+            transition: transform 0.1s, background-color 0.3s;
+        }
+
+        .theme-toggle:active { transform: scale(0.9); }
+        .theme-toggle svg { width: var(--icon-size); height: var(--icon-size); color: var(--text-color); }
+
+        /* Game area */
+        .game-area {
+            flex: 1 1 auto;
             width: 100%;
-        }
-        .header h1 {
-            font-size: 28px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 4px;
-        }
-        .header p {
-            font-size: 14px;
-            color: var(--text-sub);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: var(--gap);
+            min-height: 0;
         }
 
-        /* Ігрове поле */
+        /* Board */
         .board-bg {
             background: var(--board-bg);
-            border-radius: 24px;
-            padding: 6px;
-            box-shadow: 0 10px 30px var(--board-shadow);
-            transition: background-color 0.3s, box-shadow 0.3s;
-            width: 100%;
+            border-radius: var(--board-radius);
+            padding: var(--board-padding);
+            box-shadow: 0 8px 24px var(--btn-shadow);
+            width: var(--board-size);
+            height: var(--board-size);
+            flex: 0 0 auto;
         }
 
         .board {
             width: 100%;
-            aspect-ratio: 1; /* Робить поле ідеальним квадратом */
-            position: relative;
-            border-radius: 18px;
+            height: 100%;
+            border-radius: calc(var(--board-radius) - var(--board-padding));
             overflow: hidden;
-            background: radial-gradient(circle, var(--btn-shadow) 0%, transparent 70%);
+            position: relative;
             touch-action: none;
         }
 
-        canvas {
+        .board canvas {
             display: block;
             width: 100%;
             height: 100%;
             outline: none;
         }
 
-        /* Панель керування */
-        .controls {
-            display: flex;
-            justify-content: center;
-            margin-top: 5px;
-            width: 100%;
-        }
-
+        /* Scramble button */
         .scramble-btn {
-            background-color: var(--btn-green);
+            background: var(--primary);
             color: white;
             border: none;
-            padding: 14px 20px;
-            border-radius: 15px;
-            font-size: 18px;
+            padding: var(--scramble-pad-v) var(--scramble-pad-h);
+            font-size: var(--scramble-size);
             font-weight: 700;
             font-family: inherit;
+            border-radius: var(--scramble-radius);
             cursor: pointer;
-            box-shadow: 0 6px 0 var(--btn-green-shadow);
-            transition: transform 0.1s, box-shadow 0.1s, background-color 0.3s;
-            width: 100%;
-        }
-        .scramble-btn:active {
-            transform: translateY(6px);
-            box-shadow: 0 0px 0 var(--btn-green-shadow);
+            box-shadow: 0 4px 12px var(--btn-shadow);
+            transition: transform 0.1s;
+            width: var(--board-size);
         }
 
-        /* Модальне вікно перемоги */
-        .overlay {
+        .scramble-btn:active { transform: scale(0.95); }
+
+        /* Modal */
+        .modal-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
             display: flex;
             justify-content: center;
             align-items: center;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s;
-            z-index: 1000;
+            z-index: 100;
         }
-        .overlay.active {
+
+        .modal-overlay.active {
             opacity: 1;
             pointer-events: auto;
         }
-        .modal {
-            background: var(--modal-bg);
-            padding: 40px;
-            border-radius: 30px;
-            text-align: center;
-            transform: translateY(20px) scale(0.95);
-            transition: transform 0.3s;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-            width: 90%;
-            max-width: 350px;
-        }
-        .overlay.active .modal {
-            transform: translateY(0) scale(1);
-        }
-        .modal h2 {
-            font-size: 28px;
-            margin-bottom: 10px;
-            color: var(--text-main);
-        }
-        .modal p {
-            color: var(--text-sub);
-            margin-bottom: 25px;
-            font-size: 16px;
-        }
-        .modal-icon {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 20px;
-            background: #fff3cd;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-icon svg { width: 40px; height: 40px; fill: #ffd43b; }
 
+        .modal-content {
+            background: var(--bg-color);
+            padding: var(--modal-padding);
+            border-radius: var(--modal-radius);
+            text-align: center;
+            transform: translateY(50px);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            max-width: 90%;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-content h2 {
+            font-size: var(--modal-title-size);
+            margin-bottom: 10px;
+            color: var(--text-color);
+        }
+
+        .modal-content p {
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+            font-size: var(--modal-text-size);
+        }
+
+        .play-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: var(--modal-padding) calc(var(--modal-padding) * 2);
+            font-size: var(--modal-btn-size);
+            font-weight: 700;
+            font-family: inherit;
+            border-radius: var(--modal-radius);
+            cursor: pointer;
+            transition: transform 0.1s;
+            width: 100%;
+        }
+
+        .play-btn:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
 
 <div class="app-container">
-    <!-- Верхня панель -->
-    <div class="top-bar">
-        <button class="icon-btn" id="themeBtn" aria-label="Змінити тему">
-            <svg id="themeIcon" viewBox="0 0 24 24">
-                <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41.39.39 1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41.39.39 1.03.39 1.41 0l1.06-1.06z"></path>
-            </svg>
+    <div class="header">
+        <button class="back-btn" onclick="goBack()" title="Back">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
         </button>
-
-        <div class="score-pill">
-            <svg viewBox="0 0 24 24">
-                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path>
-            </svg>
-            <span id="scoreDisplay">0</span>
+        <span class="header-title">Rubik's Cube</span>
+        <div class="header-right">
+            <button class="theme-toggle" id="themeBtn" title="Change theme">
+                <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            </button>
         </div>
     </div>
 
-    <!-- Заголовок -->
-    <div class="header">
-        <h1>Рубік</h1>
-        <p>Свайпай по кубику щоб крутити ряди</p>
-    </div>
+    <div class="game-area">
+        <div class="board-bg">
+            <div class="board" id="board"></div>
+        </div>
 
-    <!-- Ігрове поле -->
-    <div class="board-bg">
-        <div class="board" id="board"></div>
-    </div>
-
-    <!-- Кнопка керування -->
-    <div class="controls">
-        <button class="scramble-btn" id="scrambleBtn">Заплутати</button>
+        <button class="scramble-btn" id="scrambleBtn">Scramble</button>
     </div>
 </div>
 
-<!-- Модальне вікно -->
-<div class="overlay" id="winOverlay">
-    <div class="modal">
-        <div class="modal-icon">
-            <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path></svg>
-        </div>
-        <h2>Блискуче!</h2>
-        <p>Ти успішно зібрав кубик.</p>
-        <button class="scramble-btn" id="playAgainBtn">Грати ще</button>
+<div class="modal-overlay" id="winOverlay">
+    <div class="modal-content">
+        <h2>Brilliant! 🎉</h2>
+        <p>You solved the cube!</p>
+        <button class="play-btn" id="playAgainBtn">Play Again</button>
     </div>
 </div>
 
 <script>
-    let materials = [];
+    // ================================================================
+    // АДАПТИВНАЯ ВЁРСТКА
+    // ================================================================
+    let scene, camera, renderer; // объявлены здесь, чтобы updateRendererSize не падал
+    let materials = []; // здесь же, чтобы updateCubeColors не падал
 
-    // ==========================================
-    // 1. АУДІО ДВИЖОК
-    // ==========================================
+    const LAYOUT_CFG = {
+        portrait: {
+            marginRatio: 0.025,
+            gapRatio: 0.018,
+            headerRatio: 0.075,
+            headerMinRatio: 0.05, headerMaxRatio: 0.10,
+        },
+        landscape: {
+            marginRatio: 0.035,
+            gapRatio: 0.03,
+            headerRatio: 0.12,
+            headerMinRatio: 0.06, headerMaxRatio: 0.14,
+        }
+    };
+
+    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+    let safeInsetsCache = { top: 0, bottom: 0, left: 0, right: 0 };
+    (function measureSafeInsets() {
+        const probe = document.createElement('div');
+        probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;' +
+            'padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);' +
+            'padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);' +
+            'visibility:hidden;';
+        document.body.appendChild(probe);
+        const cs = getComputedStyle(probe);
+        safeInsetsCache = {
+            top: parseFloat(cs.paddingTop) || 0,
+            bottom: parseFloat(cs.paddingBottom) || 0,
+            left: parseFloat(cs.paddingLeft) || 0,
+            right: parseFloat(cs.paddingRight) || 0
+        };
+        probe.remove();
+    })();
+
+    function calcLayout() {
+        const insets = safeInsetsCache;
+        const availW = window.innerWidth - insets.left - insets.right;
+        const availH = window.innerHeight - insets.top - insets.bottom;
+        const isPortrait = availH >= availW;
+        const cfg = isPortrait ? LAYOUT_CFG.portrait : LAYOUT_CFG.landscape;
+
+        const margin = Math.round(availH * cfg.marginRatio);
+        const gap = Math.round(availH * cfg.gapRatio);
+        const headerH = Math.round(clamp(availH * cfg.headerRatio, availH * cfg.headerMinRatio, availH * cfg.headerMaxRatio));
+
+        // scramble button height ~ headerH * 0.5
+        const btnH = Math.round(headerH * 0.5);
+        const usableH = availH - margin * 2 - headerH - btnH - gap * 2;
+        const usableW = availW - margin * 2;
+        const boardSize = Math.max(180, Math.floor(Math.min(usableH, usableW)));
+
+        return { margin, gap, headerH, boardSize };
+    }
+
+    let currentLayout = null;
+
+    function applyLayout() {
+        const L = calcLayout();
+        currentLayout = L;
+        const root = document.documentElement;
+
+        root.style.setProperty('--margin', L.margin + 'px');
+        root.style.setProperty('--gap', L.gap + 'px');
+        root.style.setProperty('--header-h', L.headerH + 'px');
+        root.style.setProperty('--board-size', L.boardSize + 'px');
+
+        root.style.setProperty('--btn-size', Math.round(L.headerH * 0.68) + 'px');
+        root.style.setProperty('--icon-size', Math.round(L.headerH * 0.36) + 'px');
+        root.style.setProperty('--title-size', Math.round(L.headerH * 0.34) + 'px');
+
+        root.style.setProperty('--board-padding', Math.round(L.boardSize * 0.02) + 'px');
+        root.style.setProperty('--board-radius', Math.round(L.boardSize * 0.06) + 'px');
+
+        root.style.setProperty('--scramble-pad-v', Math.round(L.headerH * 0.2) + 'px');
+        root.style.setProperty('--scramble-pad-h', Math.round(L.headerH * 0.4) + 'px');
+        root.style.setProperty('--scramble-size', Math.round(L.headerH * 0.32) + 'px');
+        root.style.setProperty('--scramble-radius', Math.round(L.headerH * 0.35) + 'px');
+
+        root.style.setProperty('--modal-padding', Math.round(L.boardSize * 0.07) + 'px');
+        root.style.setProperty('--modal-radius', Math.round(L.boardSize * 0.05) + 'px');
+        root.style.setProperty('--modal-title-size', Math.round(L.boardSize * 0.065) + 'px');
+        root.style.setProperty('--modal-text-size', Math.round(L.boardSize * 0.04) + 'px');
+        root.style.setProperty('--modal-btn-size', Math.round(L.boardSize * 0.042) + 'px');
+
+        // Обновляем Three.js рендерер
+        updateRendererSize();
+    }
+
+    applyLayout();
+    window.addEventListener('resize', applyLayout);
+
+    // ================================================================
+    // ТЕМЫ
+    // ================================================================
+    const themeBtn = document.getElementById('themeBtn');
+    const moonIcon = document.getElementById('moonIcon');
+    const sunIcon = document.getElementById('sunIcon');
+    let currentTheme = localStorage.getItem('brainGamesTheme') || 'light';
+
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        moonIcon.style.display = theme === 'dark' ? 'none' : '';
+        sunIcon.style.display = theme === 'dark' ? '' : 'none';
+        localStorage.setItem('brainGamesTheme', theme);
+        updateCubeColors();
+    }
+    applyTheme(currentTheme);
+
+    themeBtn.addEventListener('click', () => {
+        currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+        applyTheme(currentTheme);
+    });
+
+    // ================================================================
+    // АУДИО
+    // ================================================================
     const AudioContext = window.AudioContext || window.webkitAudioContext;
-    let audioCtx = null;
+    let audioCtx;
 
     function initAudio() {
         if (!audioCtx) audioCtx = new AudioContext();
@@ -341,7 +465,7 @@
         osc.connect(gainNode);
         gainNode.connect(audioCtx.destination);
         const now = audioCtx.currentTime;
-        
+
         if (type === 'click') {
             osc.type = 'triangle';
             osc.frequency.setValueAtTime(300, now);
@@ -351,9 +475,7 @@
             osc.start(now);
             osc.stop(now + 0.1);
         } else if (type === 'win') {
-            osc.type = 'sine';
             const notes = [440, 554.37, 659.25, 880];
-            gainNode.gain.setValueAtTime(0.2, now);
             notes.forEach((freq, i) => {
                 const oscNote = audioCtx.createOscillator();
                 const gainNote = audioCtx.createGain();
@@ -372,40 +494,13 @@
 
     document.addEventListener('pointerdown', initAudio, { once: true });
 
-    // ==========================================
-    // 2. СИСТЕМА ТЕМ
-    // ==========================================
-    const themeBtn = document.getElementById('themeBtn');
-    const themeIcon = document.getElementById('themeIcon');
-    const htmlEl = document.documentElement;
-
-    const sunPath = "M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41.39.39 1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41.39.39 1.03.39 1.41 0l1.06-1.06z";
-    const moonPath = "M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-3.03 0-5.5-2.47-5.5-5.5 0-1.82.89-3.42 2.26-4.4C12.92 3.04 12.46 3 12 3zm0 16c-3.86 0-7-3.14-7-7s3.14-7 7-7c.18 0 .35.02.51.05-.62.88-1.01 1.96-1.01 3.12 0 3.16 2.45 5.7 5.56 5.89C15.7 17.65 13.96 19 12 19z";
-
-    function setTheme(theme) {
-        htmlEl.setAttribute('data-theme', theme);
-        localStorage.setItem('brain_games_theme', theme);
-        themeIcon.innerHTML = `<path d="${theme === 'dark' ? moonPath : sunPath}"></path>`;
-        updateCubeColors();
-    }
-
-    themeBtn.addEventListener('click', () => {
-        const currentTheme = htmlEl.getAttribute('data-theme');
-        setTheme(currentTheme === 'light' ? 'dark' : 'light');
-        playSound('click');
-    });
-
-    const savedTheme = localStorage.getItem('brain_games_theme') || 'light';
-    setTheme(savedTheme);
-
-    // ==========================================
-    // 3. THREE.JS: ЛОГІКА КУБИКА РУБІКА
-    // ==========================================
+    // ================================================================
+    // THREE.JS: КУБИК РУБИКА
+    // ================================================================
     const board = document.getElementById('board');
-    let scene, camera, renderer;
     let cubeGroup;
     const cubies = [];
-    
+
     const getColors = () => {
         const style = getComputedStyle(document.body);
         return [
@@ -418,6 +513,16 @@
             style.getPropertyValue('--cube-inner').trim()
         ];
     };
+
+    function updateRendererSize() {
+        if (!renderer || !camera) return;
+        const w = board.clientWidth;
+        const h = board.clientHeight;
+        if (w === 0) return;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+    }
 
     function init3D() {
         scene = new THREE.Scene();
@@ -441,13 +546,6 @@
 
         createCubies();
 
-        window.addEventListener('resize', () => {
-            if(board.clientWidth === 0) return;
-            camera.aspect = board.clientWidth / board.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(board.clientWidth, board.clientHeight);
-        });
-
         renderer.setAnimationLoop(() => {
             renderer.render(scene, camera);
         });
@@ -459,8 +557,8 @@
         const colors = getColors();
         materials = [];
         for (let i = 0; i < 6; i++) {
-            materials.push(new THREE.MeshLambertMaterial({ 
-                color: colors[i], polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 
+            materials.push(new THREE.MeshLambertMaterial({
+                color: colors[i], polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1
             }));
         }
         const innerMat = new THREE.MeshLambertMaterial({ color: colors[6] });
@@ -472,7 +570,7 @@
         cubies.length = 0;
 
         const mats = createMaterials();
-        const gap = 0.05; 
+        const gap = 0.05;
         const size = 0.95;
         const geometry = new THREE.BoxGeometry(size, size, size);
         const edgesGeo = new THREE.EdgesGeometry(geometry);
@@ -491,17 +589,16 @@
                     ];
                     const mesh = new THREE.Mesh(geometry, cubeMaterials);
                     mesh.position.set(x * (1 + gap), y * (1 + gap), z * (1 + gap));
-                    
+
                     const edges = new THREE.LineSegments(edgesGeo, edgeMat);
                     mesh.add(edges);
                     mesh.userData = { x, y, z };
-                    
+
                     cubeGroup.add(mesh);
                     cubies.push(mesh);
                 }
             }
         }
-        // Красивий початковий ракурс
         cubeGroup.quaternion.setFromEuler(new THREE.Euler(0.2, -0.4, 0));
     }
 
@@ -513,18 +610,17 @@
         }
     }
 
-    // ==========================================
-    // 4. ІНТЕРАКЦІЯ ТА СВАЙПИ (ВЕКТОРНА МАТЕМАТИКА)
-    // ==========================================
+    // ================================================================
+    // ИНТЕРАКЦИЯ
+    // ================================================================
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
-    
+
     let isDragging = false;
     let dragStartPoint = { x: 0, y: 0 };
     let intersectStart = null;
     let isAnimating = false;
     let isGameActive = false;
-    let score = 0;
 
     function setupControls() {
         board.addEventListener('pointerdown', onPointerDown);
@@ -545,13 +641,8 @@
         if (isAnimating) return;
         isDragging = true;
         dragStartPoint = { x: event.clientX, y: event.clientY };
-        
         const intersects = getIntersects(event);
-        if (intersects.length > 0) {
-            intersectStart = intersects[0];
-        } else {
-            intersectStart = null;
-        }
+        intersectStart = intersects.length > 0 ? intersects[0] : null;
     }
 
     function onPointerMove(event) {
@@ -561,23 +652,19 @@
         const deltaY = event.clientY - dragStartPoint.y;
 
         if (!intersectStart) {
-            // Отримуємо вектори напрямку "Вгору" та "Вправо" відносно камери
             const rightDir = new THREE.Vector3(1, 0, 0).transformDirection(camera.matrixWorld).normalize();
             const upDir = new THREE.Vector3(0, 1, 0).transformDirection(camera.matrixWorld).normalize();
 
-            // Обертаємо навколо осі "Вгору" для руху по X, і навколо "Вправо" для руху по Y
             const rotX = new THREE.Quaternion().setFromAxisAngle(upDir, deltaX * 0.005);
             const rotY = new THREE.Quaternion().setFromAxisAngle(rightDir, deltaY * 0.005);
 
-            // Комбінуємо та застосовуємо обертання у глобальному просторі (відносно екрану)
             const deltaRot = new THREE.Quaternion().multiplyQuaternions(rotY, rotX);
             cubeGroup.quaternion.premultiply(deltaRot);
-            cubeGroup.quaternion.normalize(); // Уникаємо накопичення похибок
+            cubeGroup.quaternion.normalize();
 
             dragStartPoint = { x: event.clientX, y: event.clientY };
         } else {
-            // Свайп по фігурі (відстежуємо напрямок)
-            const dist = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
+            const dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
             if (dist > 30) {
                 handleSliceRotation(deltaX, deltaY);
                 isDragging = false;
@@ -590,26 +677,19 @@
         intersectStart = null;
     }
 
-    // Найбільш надійний метод визначення осі через Векторний добуток
     function handleSliceRotation(deltaX, deltaY) {
-        // 1. Нормаль грані (куди вона дивиться у світовому просторі)
         const normalWorld = intersectStart.face.normal.clone().transformDirection(intersectStart.object.matrixWorld).normalize();
-        
-        // 2. Вектор свайпу мишкою у світовому просторі камери
         const dragWorld = new THREE.Vector3(deltaX, -deltaY, 0);
         dragWorld.transformDirection(camera.matrixWorld).normalize();
-        
-        // 3. Ось обертання = Нормаль Х Вектор руху (Векторний добуток)
+
         const axisWorld = new THREE.Vector3().crossVectors(normalWorld, dragWorld).normalize();
-        
-        // 4. Переводимо світову вісь у локальну систему координат кубика
+
         const matrixInverse = cubeGroup.matrixWorld.clone().invert();
         const axisLocal = axisWorld.clone().transformDirection(matrixInverse).round();
-        
+
         let axis = new THREE.Vector3();
         let direction = 1;
-        
-        // Визначаємо найсильнішу домінантну вісь
+
         if (Math.abs(axisLocal.x) > Math.abs(axisLocal.y) && Math.abs(axisLocal.x) > Math.abs(axisLocal.z)) {
             axis.set(1, 0, 0); direction = Math.sign(axisLocal.x);
         } else if (Math.abs(axisLocal.y) > Math.abs(axisLocal.z)) {
@@ -622,7 +702,6 @@
         rotateLayer(axis, point, direction * Math.PI / 2, 300);
     }
 
-    // Обертання шару
     function rotateLayer(axis, point, angle, duration = 300, isScrambling = false) {
         return new Promise(resolve => {
             isAnimating = true;
@@ -631,7 +710,6 @@
             const activeCubies = [];
             const epsilon = 0.5;
 
-            // Відбір кубиків, що належать до площини зрізу
             cubies.forEach(c => {
                 if (axis.x && Math.abs(c.position.x - point.x) < epsilon) activeCubies.push(c);
                 if (axis.y && Math.abs(c.position.y - point.y) < epsilon) activeCubies.push(c);
@@ -645,165 +723,94 @@
 
             activeCubies.forEach(c => pivot.attach(c));
 
-            const startRot = pivot.rotation[axis.x ? 'x' : axis.y ? 'y' : 'z'];
+            const axisKey = axis.x ? 'x' : axis.y ? 'y' : 'z';
+            const startRot = pivot.rotation[axisKey];
             const targetRot = startRot + angle;
             const startTime = performance.now();
 
             function animateRotation(now) {
                 const timePassed = now - startTime;
                 const progress = Math.min(timePassed / duration, 1);
-                
-                // Згладжування Quad in/out
                 const ease = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
-                pivot.rotation[axis.x ? 'x' : axis.y ? 'y' : 'z'] = startRot + (targetRot - startRot) * ease;
-                
+                pivot.rotation[axisKey] = startRot + angle * ease;
+
                 if (progress < 1) {
                     requestAnimationFrame(animateRotation);
                 } else {
+                    pivot.rotation[axisKey] = targetRot;
                     pivot.updateMatrixWorld();
-                    
-                    // Жорстка фіксація позиції щоб уникнути "випадіння" кубиків при скрамблуванні
-                    const snapPos = (val) => {
-                        if (val > 0.5) return 1.05;
-                        if (val < -0.5) return -1.05;
-                        return 0;
-                    };
-
-                    activeCubies.forEach(c => {
-                        c.updateMatrixWorld();
-                        cubeGroup.attach(c);
-                        
-                        // Фіксація світових координат на ідеальній сітці
-                        c.position.x = snapPos(c.position.x);
-                        c.position.y = snapPos(c.position.y);
-                        c.position.z = snapPos(c.position.z);
-                        
-                        // Ідеальне математичне округлення матриці ротації (лише рівні 90 градусів)
-                        const mat = new THREE.Matrix4().makeRotationFromQuaternion(c.quaternion);
-                        const e = mat.elements;
-                        for(let i = 0; i < 16; i++) e[i] = Math.round(e[i]);
-                        c.quaternion.setFromRotationMatrix(mat);
-                    });
-                    
+                    activeCubies.forEach(c => cubeGroup.attach(c));
                     cubeGroup.remove(pivot);
                     isAnimating = false;
-                    
-                    if (!isScrambling && isGameActive) checkWinCondition();
-                    resolve(); // Завершення Promise
+                    if (!isScrambling) checkWin();
+                    resolve();
                 }
             }
+
             requestAnimationFrame(animateRotation);
         });
     }
 
-    // Заплутування кубика
-    async function scramble() {
-        if(isAnimating) return;
-        isGameActive = false;
-        isAnimating = true; // Блокуємо UI
-        
-        const axes = [new THREE.Vector3(1,0,0), new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,1)];
-        const points = [-1.05, 0, 1.05];
-        
-        for(let i = 0; i < 20; i++) {
-            const axis = axes[Math.floor(Math.random() * axes.length)];
-            const pt = new THREE.Vector3();
-            const coord = points[Math.floor(Math.random() * points.length)];
-            if(axis.x) pt.x = coord;
-            if(axis.y) pt.y = coord;
-            if(axis.z) pt.z = coord;
-            
-            const dir = Math.random() > 0.5 ? 1 : -1;
-            
-            await rotateLayer(axis, pt, dir * Math.PI/2, 80, true);
-        }
-        isGameActive = true;
-    }
-
-    // ==========================================
-    // 5. РОЗУМНА ПЕРЕВІРКА ПЕРЕМОГИ
-    // ==========================================
-    function checkWinCondition() {
-        let isSolved = true;
-        
-        // Беремо тільки зовнішні кубики (8 кутів + 12 ребер = 20 шт).
-        // Ігноруємо центри та серцевину, оскільки вони можуть бути математично прокручені
-        // на місці, що візуально ніяк не впливає на складений кубик.
-        const outerCubies = cubies.filter(c => 
-            (Math.abs(c.userData.x) + Math.abs(c.userData.y) + Math.abs(c.userData.z)) >= 2
-        );
-
-        if (outerCubies.length === 0) return;
-
-        // Беремо поточний поворот (орієнтацію) ПЕРШОГО зовнішнього кубика як еталон
-        const refMat = new THREE.Matrix4().makeRotationFromQuaternion(outerCubies[0].quaternion);
-        const refE = refMat.elements;
-
-        // Перевіряємо всі інші кутові та реберні деталі
-        // Якщо кубик складено правильно, всі його деталі матимуть ОДНАКОВЕ обертання відносно початку гри.
-        // Завдяки цьому кубик може бути зібраний хоч догори дригом, і гра все одно це зарахує!
-        for (let i = 1; i < outerCubies.length; i++) {
-            const mat = new THREE.Matrix4().makeRotationFromQuaternion(outerCubies[i].quaternion);
-            const e = mat.elements;
-            
-            for (let j = 0; j < 16; j++) {
-                // Допускаємо мінімальну похибку обчислень у дробових числах
-                if (Math.abs(refE[j] - e[j]) > 0.1) {
-                    isSolved = false;
-                    break;
-                }
+    // ================================================================
+    // ЛОГИКА ИГРЫ
+    // ================================================================
+    function isSolved() {
+        for (const c of cubies) {
+            const ud = c.userData;
+            if (Math.abs(ud.x - Math.round(c.position.x)) > 0.01 ||
+                Math.abs(ud.y - Math.round(c.position.y)) > 0.01 ||
+                Math.abs(ud.z - Math.round(c.position.z)) > 0.01) {
+                return false;
             }
-            if (!isSolved) break;
         }
+        return true;
+    }
 
-        if (isSolved && isGameActive) {
-            handleWin();
+    function checkWin() {
+        if (!isGameActive) return;
+        if (isSolved()) {
+            isGameActive = false;
+            playSound('win');
+            const boardSz = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--board-size')) || 400;
+            confetti({
+                particleCount: Math.round(boardSz * 0.35),
+                spread: Math.round(boardSz * 0.16),
+                origin: { y: 0.6 },
+                colors: ['#06D6A0', '#FFD166', '#EF476F', '#118AB2']
+            });
+            setTimeout(() => document.getElementById('winOverlay').classList.add('active'), 800);
         }
     }
 
-    function handleWin() {
-        isGameActive = false;
-        playSound('win');
-        
-        score += 150;
-        document.getElementById('scoreDisplay').innerText = score;
-
-        // Салют конфеті
-        var duration = 3000;
-        var end = Date.now() + duration;
-
-        (function frame() {
-            confetti({
-                particleCount: 5, angle: 60, spread: 55, origin: { x: 0 },
-                colors: ['#ff8787', '#69db7c', '#74c0fc', '#ffec99']
-            });
-            confetti({
-                particleCount: 5, angle: 120, spread: 55, origin: { x: 1 },
-                colors: ['#ff8787', '#69db7c', '#74c0fc', '#ffec99']
-            });
-            if (Date.now() < end) requestAnimationFrame(frame);
-        }());
-
-        // Показ модального вікна з перемогою
-        setTimeout(() => document.getElementById('winOverlay').classList.add('active'), 1000);
-    }
-
-    // ==========================================
-    // 6. ІНІЦІАЛІЗАЦІЯ
-    // ==========================================
-    document.getElementById('scrambleBtn').addEventListener('click', scramble);
-    document.getElementById('playAgainBtn').addEventListener('click', () => {
+    document.getElementById('scrambleBtn').addEventListener('pointerdown', async () => {
+        if (isAnimating) return;
+        initAudio();
+        isGameActive = true;
         document.getElementById('winOverlay').classList.remove('active');
-        cubies.forEach(c => {
-            c.position.set(c.userData.x * 1.05, c.userData.y * 1.05, c.userData.z * 1.05);
-            c.quaternion.set(0,0,0,1);
-        });
-        cubeGroup.quaternion.setFromEuler(new THREE.Euler(0.2, -0.4, 0));
-        scramble();
+        confetti.reset();
+
+        const axes = [
+            { axis: new THREE.Vector3(1, 0, 0), points: [new THREE.Vector3(-1,0,0), new THREE.Vector3(0,0,0), new THREE.Vector3(1,0,0)], angles: [-1, 1] },
+            { axis: new THREE.Vector3(0, 1, 0), points: [new THREE.Vector3(0,-1,0), new THREE.Vector3(0,0,0), new THREE.Vector3(0,1,0)], angles: [-1, 1] },
+            { axis: new THREE.Vector3(0, 0, 1), points: [new THREE.Vector3(0,0,-1), new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,1)], angles: [-1, 1] },
+        ];
+
+        for (let i = 0; i < 20; i++) {
+            const randAxis = axes[Math.floor(Math.random() * axes.length)];
+            const point = randAxis.points[Math.floor(Math.random() * randAxis.points.length)];
+            const angle = randAxis.angles[Math.floor(Math.random() * randAxis.angles.length)] * Math.PI / 2;
+            await rotateLayer(randAxis.axis, point, angle, 80, true);
+        }
     });
 
-    window.onload = init3D;
+    document.getElementById('playAgainBtn').addEventListener('pointerdown', () => {
+        document.getElementById('winOverlay').classList.remove('active');
+        confetti.reset();
+        document.getElementById('scrambleBtn').click();
+    });
 
+    // Даём браузеру выполнить layout, затем запускаем 3D
+    requestAnimationFrame(() => init3D());
 </script>
 </body>
 </html>

@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.johanjimenez.folder-color": {
+      "version": "https://github.com/JohanJimenex/unity-folder-color.git#v1.0.0",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "9cabb9b74632c619533331ce56622f6e6297552d"
+    },
     "com.nobi.roundedcorners": {
       "version": "https://github.com/kirevdokimov/Unity-UI-Rounded-Corners.git",
       "depth": 0,
