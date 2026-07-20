@@ -39,11 +39,8 @@ public class WebViewOverlay : MonoBehaviour
             hooked: (msg) => Debug.Log($"Hooked: {msg}")
         );
 
-        // 3. ЌалаштовуЇмо повноекранний режим ≥з в≥дступами (в п≥ксел€х)
-        // якщо у тебе Ї SafeArea або TopPanel, тут можна зробити в≥дступи
-        webViewObject.SetMargins(0, 0, 0, 0);
 
-        // 4. ¬микаЇмо видим≥сть та завантажуЇмо стор≥нку
+        webViewObject.SetMargins(0, 0, 0, 0);
         webViewObject.SetVisibility(true);
         webViewObject.LoadURL(gameUrl);
     }
@@ -67,6 +64,19 @@ public class WebViewOverlay : MonoBehaviour
         else if (message == "close") // якщо гравець натиснув кнопку "’" в сам≥й HTML-гр≥ [cite: 1283]
         {
             CloseWebView();
+            print("CloseWebView");
+
+        }
+        else if(message == "showInterstitial")
+        {
+            AdManager.Instance.ShowInterstitialAd();
+        }
+        else if (message == "showRewarded")
+        {
+            AdManager.Instance.ShowRewardedAd((reward) =>
+            {
+                print("Rewarded");
+            });
         }
     }
 

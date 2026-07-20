@@ -10,9 +10,9 @@ public class AdManager : MonoBehaviour
     public static AdManager Instance { get; private set; }
 
     [Header("Ad Unit IDs")]
-    [SerializeField] private string _interstitialAdId = "ca-app-pub-8968740975401720/3428102550";
-    [SerializeField] private string _bannerAdId = "ca-app-pub-3940256099942544/6300978111";
-    [SerializeField] private string _rewardedAdId = "ca-app-pub-8968740975401720/1102977103";
+    [SerializeField] private string _interstitialAdId = "ca-app-pub-8968740975401720/4556150657";
+    [SerializeField] private string _bannerAdId = "ca-app-pub-8968740975401720/1775477012";
+    [SerializeField] private string _rewardedAdId = "ca-app-pub-8968740975401720/9462395345";
 
     [Header("Ad Free Window")]
     [SerializeField] private float adFreeDurationMinutes = 3f;

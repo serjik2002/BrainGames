@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="ru" data-theme="light">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>2048 - Brain Games</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
@@ -15,7 +17,7 @@
             --cell-bg: #D1D6DE;
             --btn-bg: #FFFFFF;
             --btn-shadow: rgba(0, 0, 0, 0.05);
-            
+
             /* Цвета плиток (Пастельные) */
             --tile-2: #FFF0D4;
             --tile-2-text: #7A8294;
@@ -78,7 +80,8 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        html, body {
+        html,
+        body {
             width: 100%;
             height: 100%;
         }
@@ -137,8 +140,14 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        .back-btn:active { transform: scale(0.9); }
-        .back-btn svg { width: var(--icon-size); height: var(--icon-size); }
+        .back-btn:active {
+            transform: scale(0.9);
+        }
+
+        .back-btn svg {
+            width: var(--icon-size);
+            height: var(--icon-size);
+        }
 
         /* Название игры по центру (абсолютное позиционирование) */
         .header-title {
@@ -182,8 +191,15 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        .theme-toggle:active { transform: scale(0.9); }
-        .theme-toggle svg { width: var(--icon-size); height: var(--icon-size); color: var(--text-color); }
+        .theme-toggle:active {
+            transform: scale(0.9);
+        }
+
+        .theme-toggle svg {
+            width: var(--icon-size);
+            height: var(--icon-size);
+            color: var(--text-color);
+        }
 
         /* Очки закомментированы
         .score-container {
@@ -227,7 +243,8 @@
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             grid-template-rows: repeat(4, 1fr);
-            gap: 2.666%; /* Идеальный промежуток */
+            gap: 2.666%;
+            /* Идеальный промежуток */
         }
 
         .grid-cell {
@@ -248,7 +265,8 @@
 
         .tile {
             position: absolute;
-            width: 23%; /* (100% - 3*gap) / 4 */
+            width: 23%;
+            /* (100% - 3*gap) / 4 */
             height: 23%;
             background-color: var(--tile-2);
             border-radius: var(--cell-radius);
@@ -260,7 +278,7 @@
             color: var(--tile-2-text);
             /* Плавная анимация перемещения */
             transition: top 0.1s ease-in-out, left 0.1s ease-in-out, transform 0.15s ease-in-out;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
         /* Анимация появления */
@@ -274,14 +292,27 @@
         }
 
         @keyframes appear {
-            0% { transform: scale(0); }
-            100% { transform: scale(1); }
+            0% {
+                transform: scale(0);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
 
         @keyframes pop {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.2);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
 
         /* Оверлей окончания игры */
@@ -316,7 +347,7 @@
             transition: transform 0.3s;
             width: 80%;
             max-width: 90vw;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
 
         .overlay.active .modal {
@@ -353,28 +384,85 @@
         }
 
         /* Классы для расцветки плиток */
-        .t-2 { background-color: var(--tile-2); color: var(--tile-2-text); }
-        .t-4 { background-color: var(--tile-4); color: var(--tile-4-text); }
-        .t-8 { background-color: var(--tile-8); color: var(--tile-8-text); }
-        .t-16 { background-color: var(--tile-16); color: var(--tile-16-text); }
-        .t-32 { background-color: var(--tile-32); color: var(--tile-32-text); }
-        .t-64 { background-color: var(--tile-64); color: var(--tile-64-text); }
-        .t-128 { background-color: var(--tile-128); color: var(--tile-128-text); font-size: var(--tile-font-size-sm); }
-        .t-256 { background-color: var(--tile-256); color: var(--tile-256-text); font-size: var(--tile-font-size-sm); }
-        .t-512 { background-color: var(--tile-512); color: var(--tile-512-text); font-size: var(--tile-font-size-sm); }
-        .t-1024 { background-color: var(--tile-1024); color: var(--tile-1024-text); font-size: var(--tile-font-size-xs); }
-        .t-2048 { background-color: var(--tile-2048); color: var(--tile-2048-text); font-size: var(--tile-font-size-xs); box-shadow: 0 0 15px rgba(157, 78, 221, 0.5); }
-        .t-super { background-color: var(--tile-super); color: var(--tile-2048-text); font-size: var(--tile-font-size-xs); }
+        .t-2 {
+            background-color: var(--tile-2);
+            color: var(--tile-2-text);
+        }
 
+        .t-4 {
+            background-color: var(--tile-4);
+            color: var(--tile-4-text);
+        }
+
+        .t-8 {
+            background-color: var(--tile-8);
+            color: var(--tile-8-text);
+        }
+
+        .t-16 {
+            background-color: var(--tile-16);
+            color: var(--tile-16-text);
+        }
+
+        .t-32 {
+            background-color: var(--tile-32);
+            color: var(--tile-32-text);
+        }
+
+        .t-64 {
+            background-color: var(--tile-64);
+            color: var(--tile-64-text);
+        }
+
+        .t-128 {
+            background-color: var(--tile-128);
+            color: var(--tile-128-text);
+            font-size: var(--tile-font-size-sm);
+        }
+
+        .t-256 {
+            background-color: var(--tile-256);
+            color: var(--tile-256-text);
+            font-size: var(--tile-font-size-sm);
+        }
+
+        .t-512 {
+            background-color: var(--tile-512);
+            color: var(--tile-512-text);
+            font-size: var(--tile-font-size-sm);
+        }
+
+        .t-1024 {
+            background-color: var(--tile-1024);
+            color: var(--tile-1024-text);
+            font-size: var(--tile-font-size-xs);
+        }
+
+        .t-2048 {
+            background-color: var(--tile-2048);
+            color: var(--tile-2048-text);
+            font-size: var(--tile-font-size-xs);
+            box-shadow: 0 0 15px rgba(157, 78, 221, 0.5);
+        }
+
+        .t-super {
+            background-color: var(--tile-super);
+            color: var(--tile-2048-text);
+            font-size: var(--tile-font-size-xs);
+        }
     </style>
 </head>
+
 <body>
 
     <div class="app-container">
         <!-- Верхняя панель -->
         <div class="header">
             <button class="back-btn" id="backBtn" onclick="goBack()" title="Назад">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
             </button>
             <span class="header-title">2048</span>
             <div class="header-right">
@@ -385,8 +473,24 @@
                 </div>
                 -->
                 <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Сменить тему">
-                    <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-                    <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                    <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" style="display: none;">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
                 </button>
             </div>
         </div>
@@ -395,10 +499,22 @@
         <div class="board-bg" id="touchArea">
             <div class="board-grid">
                 <!-- 16 пустых ячеек подложки -->
-                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
-                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
-                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
-                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                <div class="grid-cell"></div>
+                <div class="grid-cell"></div>
+                <div class="grid-cell"></div>
+                <div class="grid-cell"></div>
+                <div class="grid-cell"></div>
+                <div class="grid-cell"></div>
+                <div class="grid-cell"></div>
+                <div class="grid-cell"></div>
+                <div class="grid-cell"></div>
+                <div class="grid-cell"></div>
+                <div class="grid-cell"></div>
+                <div class="grid-cell"></div>
+                <div class="grid-cell"></div>
+                <div class="grid-cell"></div>
+                <div class="grid-cell"></div>
+                <div class="grid-cell"></div>
             </div>
             <!-- Слой для динамических плиток -->
             <div class="tile-container" id="tileContainer"></div>
@@ -415,10 +531,14 @@
     </div>
 
     <script>
+        function sendToUnity(message) {
+            Unity.call(message);
+        }
+
+
         // ================================================================
         // АДАПТИВНАЯ ВЁРСТКА
         // ================================================================
-
         const LAYOUT_CFG = {
             portrait: {
                 marginRatio: 0.025,
@@ -561,14 +681,7 @@
 
         // --- КНОПКА НАЗАД ---
         function goBack() {
-            // Пытаемся отправить сообщение в Unity (WebView)
-            if (typeof unityInstance !== 'undefined' && unityInstance) {
-                unityInstance.SendMessage('WebViewBridge', 'OnBackPressed');
-            }
-            // Если просто в браузере — history.back
-            if (window.history.length > 1) {
-                window.history.back();
-            }
+            sendToUnity('close');
         }
 
         // --- ЛОГИКА ТЕМЫ ---
@@ -629,7 +742,7 @@
             for (let r = 0; r < SIZE; r++) {
                 for (let c = 0; c < SIZE; c++) {
                     if (board[r][c] === null) {
-                        emptyCells.push({r, c});
+                        emptyCells.push({ r, c });
                     }
                 }
             }
@@ -647,7 +760,7 @@
 
         function renderBoard() {
             const container = document.getElementById('tileContainer');
-            
+
             // Отрисовываем текущее состояние
             for (let r = 0; r < SIZE; r++) {
                 for (let c = 0; c < SIZE; c++) {
@@ -663,7 +776,7 @@
                             if (tile.isMerged) el.classList.add('merged');
                             el.innerText = tile.val;
                             container.appendChild(el);
-                            
+
                             // Сброс флагов анимации для следующих кадров
                             tile.isNew = false;
                             tile.isMerged = false;
@@ -678,7 +791,7 @@
                             }
                             el.innerText = tile.val;
                         }
-                        
+
                         // Позиция
                         el.style.top = getPos(r);
                         el.style.left = getPos(c);
@@ -700,17 +813,17 @@
             let merged = false;
             let removedTiles = [];
             for (let i = 0; i < arr.length - 1; i++) {
-                if (arr[i].val === arr[i+1].val) {
+                if (arr[i].val === arr[i + 1].val) {
                     arr[i].val *= 2;
                     // score += arr[i].val; // Очки закомментированы
                     arr[i].isMerged = true;
-                    
+
                     // Сохраняем id удаляемой плитки и к какой она присоединяется
-                    removedTiles.push({ removedId: arr[i+1].id, mergedIntoId: arr[i].id });
+                    removedTiles.push({ removedId: arr[i + 1].id, mergedIntoId: arr[i].id });
 
                     arr.splice(i + 1, 1);
                     merged = true;
-                    
+
                     if (arr[i].val === 2048 && !hasWon) {
                         triggerWin();
                     }
@@ -751,7 +864,7 @@
                 for (let j = 0; j < SIZE; j++) {
                     let tile = newRow[j];
                     let r, c;
-                    
+
                     if (direction === 'LEFT') { r = i; c = j; }
                     if (direction === 'RIGHT') { r = i; c = SIZE - 1 - j; }
                     if (direction === 'UP') { r = j; c = i; }
@@ -762,7 +875,7 @@
                         if (tile.r !== r || tile.c !== c) hasMoved = true;
                         tile.r = r;
                         tile.c = c;
-                        
+
                         // Прописываем конечные координаты для плитки, которая вливается в текущую
                         let removed = allRemovedTiles.find(rt => rt.mergedIntoId === tile.id);
                         if (removed) {
@@ -777,7 +890,7 @@
             if (hasMoved || hasMerged) {
                 isAnimating = true;
                 // updateScore(); // Очки закомментированы
-                
+
                 // Анимируем удаляемые плитки к их новой позиции
                 allRemovedTiles.forEach(rt => {
                     let el = document.getElementById('tile-' + rt.removedId);
@@ -820,11 +933,11 @@
             for (let r = 0; r < SIZE; r++) {
                 for (let c = 0; c < SIZE; c++) {
                     let val = board[r][c].val;
-                    if (r < SIZE - 1 && board[r+1][c].val === val) return;
-                    if (c < SIZE - 1 && board[r][c+1].val === val) return;
+                    if (r < SIZE - 1 && board[r + 1][c].val === val) return;
+                    if (c < SIZE - 1 && board[r][c + 1].val === val) return;
                 }
             }
-            
+
             // Если дошли сюда — проигрыш
             showModal("Поражение!", ""); // Очки закомментированы
         }
@@ -862,9 +975,9 @@
             if (e.key === 'ArrowDown') move('DOWN');
             if (e.key === 'ArrowLeft') move('LEFT');
             if (e.key === 'ArrowRight') move('RIGHT');
-            
+
             // Предотвращение прокрутки окна стрелками
-            if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
+            if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].indexOf(e.code) > -1) {
                 e.preventDefault();
             }
         });
@@ -878,16 +991,16 @@
             touchStartX = e.changedTouches[0].screenX;
             touchStartY = e.changedTouches[0].screenY;
             e.preventDefault(); // Убираем стандартные жесты браузера на доске
-        }, {passive: false});
+        }, { passive: false });
 
         touchArea.addEventListener('touchend', (e) => {
             if (isAnimating) return;
             let touchEndX = e.changedTouches[0].screenX;
             let touchEndY = e.changedTouches[0].screenY;
-            
+
             let dx = touchEndX - touchStartX;
             let dy = touchEndY - touchStartY;
-            
+
             // Защита от случайных кликов (свайп должен быть больше 30px)
             if (Math.abs(dx) > 30 || Math.abs(dy) > 30) {
                 if (Math.abs(dx) > Math.abs(dy)) {
@@ -898,11 +1011,12 @@
                     else move('UP');
                 }
             }
-        }, {passive: false});
+        }, { passive: false });
 
         // Запуск
         window.onload = initBoard;
 
     </script>
 </body>
+
 </html>

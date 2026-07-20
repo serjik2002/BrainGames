@@ -22,17 +22,7 @@ public class NotificationManager : MonoBehaviour
 
     [Header("Настройки каскадных уведомлений")]
     [SerializeField]
-    private NotificationConfig[] _notifications = new NotificationConfig[]
-    {
-        // 2 часа
-        new NotificationConfig { DelayHours = 2f, Title = "Brain Workout \ud83e\udde0", Text = "The arrows are waiting! Ready to beat a few levels?" },
-        // 24 часа
-        new NotificationConfig { DelayHours = 24f, Title = "The arrows miss you", Text = "Come back to the game, these new levels won't solve themselves!" },
-        // 3 дня (72 часа)
-        new NotificationConfig { DelayHours = 72f, Title = "Long time no see!", Text = "It's been 3 days. Jump back in and solve a few more levels!" },
-        // 7 дней (168 часов)
-        new NotificationConfig { DelayHours = 168f, Title = "We're still waiting!", Text = "A whole week has passed! Jump back in to untangle new puzzles." }
-    };
+    private NotificationConfig[] _notifications;
 
     private const string CHANNEL_ID = "game_reminders_channel";
 

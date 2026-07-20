@@ -155,7 +155,7 @@
         }
 
         /* Cards */
-        .card { perspective: 1000px; cursor: pointer; width: 100%; height: 100%; }
+        .card { perspective: 1000px; cursor: pointer; width: 100%; height: 100%; padding: 2px; }
         .card-inner {
             position: relative; width: 100%; height: 100%;
             transition: transform 0.5s cubic-bezier(0.4, 0.0, 0.2, 1);
@@ -168,11 +168,12 @@
             position: absolute; width: 100%; height: 100%;
             backface-visibility: hidden; border-radius: var(--card-radius);
             display: flex; align-items: center; justify-content: center;
+            
         }
 
         .card-cover {
             background-color: var(--card-cover-bg);
-            box-shadow: 0 4px 0 var(--card-cover-shadow);
+            box-shadow: 0 0x 0 var(--card-cover-shadow);
         }
         .card-cover svg { width: 45%; height: 45%; fill: var(--icon-color); opacity: 0.8; }
 
