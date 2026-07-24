@@ -778,7 +778,10 @@
                 origin: { y: 0.6 },
                 colors: ['#06D6A0', '#FFD166', '#EF476F', '#118AB2']
             });
-            setTimeout(() => document.getElementById('winOverlay').classList.add('active'), 800);
+            setTimeout(() => {
+                showInterstitialAd();
+                document.getElementById('winOverlay').classList.add('active');
+            }, 800);
         }
     }
 
@@ -811,6 +814,25 @@
 
     // Даём браузеру выполнить layout, затем запускаем 3D
     requestAnimationFrame(() => init3D());
+
+    function showInterstitialAd() {
+        let payload = { action: "showInterstitial" };
+        Unity.call(JSON.stringify(payload));
+    }
+
+    function showRewardedAd() {
+        let payload = { action: "showRewarded" };
+        Unity.call(JSON.stringify(payload));
+    }
+
+    function closeGame() {
+        let payload = { action: "close" };
+        Unity.call(JSON.stringify(payload));
+    }
+
+    function goBack() {
+        closeGame();
+    }
 </script>
 </body>
 </html>

@@ -516,14 +516,23 @@
         }
     }
 
-    // --- КНОПКА НАЗАД ---
+    function showInterstitialAd() {
+        let payload = { action: "showInterstitial" };
+        Unity.call(JSON.stringify(payload));
+    }
+
+    function showRewardedAd() {
+        let payload = { action: "showRewarded" };
+        Unity.call(JSON.stringify(payload));
+    }
+
+    function closeGame() {
+        let payload = { action: "close" };
+        Unity.call(JSON.stringify(payload));
+    }
+
     function goBack() {
-        if (typeof unityInstance !== 'undefined' && unityInstance) {
-            unityInstance.SendMessage('WebViewBridge', 'OnBackPressed');
-        }
-        if (window.history.length > 1) {
-            window.history.back();
-        }
+        closeGame();
     }
 
     // --- ЛОГІКА ТЕМ (Світла/Темна) ---
@@ -765,6 +774,7 @@
         });
 
         // Показуємо модальне вікно
+        showInterstitialAd();
         setTimeout(() => {
             winOverlay.classList.add('active');
         }, 500);

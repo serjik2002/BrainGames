@@ -805,7 +805,10 @@
                 colors: ['#A5D6B6', '#B5CBEB', '#FCE199', '#F8C8C9', '#D7D0F1']
             });
             if (Date.now() < end) requestAnimationFrame(frame);
-            else winModal.classList.add('active');
+            else {
+                showInterstitialAd();
+                winModal.classList.add('active');
+            }
         }());
     }
 
@@ -814,6 +817,25 @@
     }
 
     initGame();
+
+    function showInterstitialAd() {
+        let payload = { action: "showInterstitial" };
+        Unity.call(JSON.stringify(payload));
+    }
+
+    function showRewardedAd() {
+        let payload = { action: "showRewarded" };
+        Unity.call(JSON.stringify(payload));
+    }
+
+    function closeGame() {
+        let payload = { action: "close" };
+        Unity.call(JSON.stringify(payload));
+    }
+
+    function goBack() {
+        closeGame();
+    }
 </script>
 </body>
 </html>

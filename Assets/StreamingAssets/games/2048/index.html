@@ -679,9 +679,23 @@
             }
         }
 
-        // --- КНОПКА НАЗАД ---
+        function showInterstitialAd() {
+            let payload = { action: "showInterstitial" };
+            Unity.call(JSON.stringify(payload));
+        }
+
+        function showRewardedAd() {
+            let payload = { action: "showRewarded" };
+            Unity.call(JSON.stringify(payload));
+        }
+
+        function closeGame() {
+            let payload = { action: "close" };
+            Unity.call(JSON.stringify(payload));
+        }
+
         function goBack() {
-            sendToUnity('close');
+            closeGame();
         }
 
         // --- ЛОГИКА ТЕМЫ ---
@@ -939,6 +953,7 @@
             }
 
             // Если дошли сюда — проигрыш
+            showInterstitialAd();
             showModal("Поражение!", ""); // Очки закомментированы
         }
 
@@ -953,6 +968,7 @@
                 colors: ['#06D6A0', '#FFD166', '#EF476F', '#118AB2']
             });
             setTimeout(() => {
+                showInterstitialAd();
                 showModal("Победа!", ""); // Очки закомментированы
             }, 1000);
         }

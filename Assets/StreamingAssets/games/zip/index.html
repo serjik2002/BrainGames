@@ -418,12 +418,23 @@
 
 <script>
 
-    // ── Navigation ──
+    function showInterstitialAd() {
+        let payload = { action: "showInterstitial" };
+        Unity.call(JSON.stringify(payload));
+    }
+
+    function showRewardedAd() {
+        let payload = { action: "showRewarded" };
+        Unity.call(JSON.stringify(payload));
+    }
+
+    function closeGame() {
+        let payload = { action: "close" };
+        Unity.call(JSON.stringify(payload));
+    }
+
     function goBack() {
-        if (typeof unityInstance !== 'undefined' && unityInstance) {
-            unityInstance.SendMessage('WebViewBridge', 'OnBackPressed');
-        }
-        if (window.history.length > 1) window.history.back();
+        closeGame();
     }
 
     // ── Theme ──
@@ -879,6 +890,7 @@
                 if (path.length === totalCells) {
                     playSound('win');
                     triggerConfetti();
+                    showInterstitialAd();
                     document.getElementById('winModal').classList.add('active');
                     score += 100;
                     localStorage.setItem('zipScore', score);

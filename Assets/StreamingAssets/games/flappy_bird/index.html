@@ -7,44 +7,99 @@
     <style>
         :root {
             --bg-color: #F8F9FA;
-            --board-bg: #bbd9f0; /* Легке блакитне небо */
+            --board-bg: #bbd9f0;
             --text-color: #1C2331;
             --shadow-color: rgba(0, 0, 0, 0.15);
             --grid-color: rgba(255, 255, 255, 0.6);
             --orb-color: rgba(255, 255, 255, 0.4);
-            --overlay-bg: rgba(28, 35, 49, 0.75); /* Темний контрастний фон для світлої теми */
-            --overlay-text: #FFFFFF; /* Білий текст */
+            --overlay-bg: rgba(28, 35, 49, 0.75);
+            --overlay-text: #FFFFFF;
+
+            --margin: 16px;
+            --gap: 12px;
+            --header-h: 64px;
+            --board-size: 320px;
+            --btn-size: 44px;
+            --icon-size: 22px;
+            --title-size: 22px;
         }
         [data-theme="dark"] {
             --bg-color: #121212;
-            --board-bg: #1A237E; /* Нічне небо */
+            --board-bg: #1A237E;
             --text-color: #E0E0E0;
             --shadow-color: rgba(0, 0, 0, 0.4);
             --grid-color: rgba(255, 255, 255, 0.05);
             --orb-color: rgba(255, 255, 255, 0.05);
-            --overlay-bg: rgba(0, 0, 0, 0.85); /* Ще темніший фон для нічної теми */
+            --overlay-bg: rgba(0, 0, 0, 0.85);
             --overlay-text: #FFFFFF;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Nunito', sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-color); display: flex; justify-content: center; align-items: center; min-height: 100dvh; overflow: hidden; transition: background-color 0.3s; }
-        
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; font-family: 'Nunito', sans-serif; }
+        html, body { width: 100%; height: 100%; }
+        body { background-color: var(--bg-color); color: var(--text-color); overflow: hidden; transition: background-color 0.3s; }
+
         .app-container {
-            width: 100%;
-            max-width: min(100%, calc(100dvh - 220px));
-            padding: 20px;
+            position: fixed;
+            inset: 0;
+            padding-top: calc(var(--margin) + env(safe-area-inset-top, 0px));
+            padding-bottom: calc(var(--margin) + env(safe-area-inset-bottom, 0px));
+            padding-left: calc(var(--margin) + env(safe-area-inset-left, 0px));
+            padding-right: calc(var(--margin) + env(safe-area-inset-right, 0px));
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            align-items: center;
+            gap: var(--gap);
         }
 
-        .header { display: flex; justify-content: space-between; align-items: center; }
-        .theme-btn { width: 50px; height: 50px; border-radius: 50%; background: var(--board-bg); border: none; cursor: pointer; font-size: 24px; box-shadow: 0 4px 10px var(--shadow-color); transition: 0.3s; }
-        .score-box { display: flex; align-items: center; gap: 8px; font-size: 24px; font-weight: bold; background: var(--board-bg); padding: 10px 20px; border-radius: 20px; box-shadow: 0 4px 10px var(--shadow-color); }
+        /* ── Header ── */
+        .header {
+            width: 100%;
+            max-width: calc(var(--board-size) + 2px);
+            height: var(--header-h);
+            flex: 0 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+        }
+
+        .back-btn {
+            width: var(--btn-size); height: var(--btn-size); min-width: var(--btn-size);
+            border-radius: 50%; background: var(--board-bg);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; border: none; outline: none; color: var(--text-color);
+            transition: transform 0.1s, background-color 0.3s;
+        }
+        .back-btn:active { transform: scale(0.9); }
+        .back-btn svg { width: var(--icon-size); height: var(--icon-size); }
+
+        .header-title {
+            position: absolute; left: 50%; transform: translateX(-50%);
+            max-width: calc(100% - var(--btn-size) * 2 - 40px);
+            font-size: var(--title-size); font-weight: 800; letter-spacing: 1px;
+            line-height: 1; color: var(--text-color);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+        }
+
+        .header-right { display: flex; align-items: center; gap: 6px; }
+
+        .theme-toggle {
+            width: var(--btn-size); height: var(--btn-size); min-width: var(--btn-size);
+            border-radius: 50%; background: var(--board-bg);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; border: none; outline: none; color: var(--text-color);
+            transition: transform 0.1s, background-color 0.3s;
+        }
+        .theme-toggle:active { transform: scale(0.9); }
+        .theme-toggle svg { width: var(--icon-size); height: var(--icon-size); color: var(--text-color); }
 
         .board {
-            width: 100%;
-            aspect-ratio: 1;
+            width: var(--board-size);
+            height: var(--board-size);
+            flex: 0 0 auto;
             background-color: var(--board-bg);
             border-radius: 20px;
             position: relative;
@@ -146,8 +201,17 @@
 
 <div class="app-container">
     <div class="header">
-        <button class="theme-btn" id="themeBtn">☀️</button>
-        <div class="score-box">⭐ <span id="scoreDisplay">0</span></div>
+        <button class="back-btn" onclick="goBack()" title="Back">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+        <span class="header-title">Brain Flap</span>
+        <div class="header-right">
+            <!-- <div class="score-box">⭐ <span id="scoreDisplay">0</span></div> -->
+            <button class="theme-toggle" id="themeBtn" title="Change theme">
+                <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </button>
+        </div>
     </div>
 
     <div class="board" id="gameBoard">
@@ -167,13 +231,89 @@
 </div>
 
 <script>
+    function showInterstitialAd() {
+        let payload = { action: "showInterstitial" };
+        Unity.call(JSON.stringify(payload));
+    }
+
+    function showRewardedAd() {
+        let payload = { action: "showRewarded" };
+        Unity.call(JSON.stringify(payload));
+    }
+
+    function closeGame() {
+        let payload = { action: "close" };
+        Unity.call(JSON.stringify(payload));
+    }
+
+    function goBack() {
+        closeGame();
+    }
+
+    // ── Adaptive Layout ──
+    let safeInsetsCache = { top: 0, bottom: 0, left: 0, right: 0 };
+    (function measureSafeInsets() {
+        const probe = document.createElement('div');
+        probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;' +
+            'padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);' +
+            'padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);visibility:hidden;';
+        document.body.appendChild(probe);
+        const cs = getComputedStyle(probe);
+        safeInsetsCache = {
+            top: parseFloat(cs.paddingTop) || 0, bottom: parseFloat(cs.paddingBottom) || 0,
+            left: parseFloat(cs.paddingLeft) || 0, right: parseFloat(cs.paddingRight) || 0
+        };
+        probe.remove();
+    })();
+
+    function applyLayout() {
+        const insets = safeInsetsCache;
+        const availW = window.innerWidth - insets.left - insets.right;
+        const availH = window.innerHeight - insets.top - insets.bottom;
+        const margin = Math.round(availH * 0.025);
+        const gap = Math.round(availH * 0.018);
+        const headerH = Math.round(Math.min(Math.max(availH * 0.075, availH * 0.05), availH * 0.10));
+        const usableH = availH - margin * 2 - headerH - gap;
+        const usableW = availW - margin * 2;
+        const boardSize = Math.max(180, Math.floor(Math.min(usableH, usableW)));
+
+        const root = document.documentElement;
+        root.style.setProperty('--margin', margin + 'px');
+        root.style.setProperty('--gap', gap + 'px');
+        root.style.setProperty('--header-h', headerH + 'px');
+        root.style.setProperty('--board-size', boardSize + 'px');
+        root.style.setProperty('--btn-size', Math.round(headerH * 0.68) + 'px');
+        root.style.setProperty('--icon-size', Math.round(headerH * 0.36) + 'px');
+        root.style.setProperty('--title-size', Math.round(headerH * 0.34) + 'px');
+    }
+    applyLayout();
+    window.addEventListener('resize', applyLayout);
+
+    // ── Theme ──
+    const themeBtn = document.getElementById('themeBtn');
+    const sunIcon = document.getElementById('sunIcon');
+    const moonIcon = document.getElementById('moonIcon');
+    let isDark = localStorage.getItem('brainGamesTheme') === 'dark';
+
+    function updateTheme() {
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        sunIcon.style.display = isDark ? 'block' : 'none';
+        moonIcon.style.display = isDark ? 'none' : 'block';
+        localStorage.setItem('brainGamesTheme', isDark ? 'dark' : 'light');
+    }
+    updateTheme();
+
+    themeBtn.addEventListener('click', () => {
+        isDark = !isDark;
+        updateTheme();
+    });
+
     const board = document.getElementById('gameBoard');
     const birdEl = document.getElementById('bird');
     const startScreen = document.getElementById('startScreen');
     const gameOverScreen = document.getElementById('gameOverScreen');
     const scoreDisplay = document.getElementById('scoreDisplay');
     const finalScore = document.getElementById('finalScore');
-    const themeBtn = document.getElementById('themeBtn');
 
     let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playSound(type) {
@@ -340,6 +480,7 @@
         cancelAnimationFrame(frameId);
         playSound('die');
         finalScore.innerText = score;
+        showInterstitialAd();
         gameOverScreen.classList.remove('hidden');
     }
 
@@ -348,19 +489,6 @@
         if(!gameOverScreen.classList.contains('hidden')) return;
         flap();
     });
-
-    // Тема
-    let isDark = localStorage.getItem('bg-theme') === 'dark';
-    const applyTheme = () => {
-        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-        themeBtn.innerText = isDark ? '🌙' : '☀️';
-    };
-    themeBtn.addEventListener('click', () => {
-        isDark = !isDark;
-        localStorage.setItem('bg-theme', isDark ? 'dark' : 'light');
-        applyTheme();
-    });
-    applyTheme();
 </script>
 </body>
 </html>

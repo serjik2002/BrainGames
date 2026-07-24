@@ -22,10 +22,17 @@
             --shadow-color: rgba(0, 0, 0, 0.08);
             --modal-bg: rgba(255, 255, 255, 0.9);
             --danger: #EF476F;
+
+            --margin: 16px;
+            --gap: 12px;
+            --header-h: 64px;
+            --board-size: 320px;
+            --btn-size: 44px;
+            --icon-size: 22px;
+            --title-size: 22px;
         }
 
         [data-theme="dark"] {
-            /* Dark Theme Colors */
             --bg-color: #121212;
             --text-main: #E0E0E0;
             --text-muted: #888888;
@@ -45,100 +52,77 @@
             margin: 0;
             padding: 0;
             user-select: none;
+            -webkit-user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
+
+        html, body { width: 100%; height: 100%; }
 
         body {
             font-family: 'Nunito', sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            min-height: 100dvh;
             overflow: hidden;
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        /* Ultimate App Container */
         .app-container {
-            width: 100%;
-            /* 240px is reserved for header and bottom UI */
-            max-width: min(100%, calc(100dvh - 240px));
-            padding: 20px;
+            position: fixed;
+            inset: 0;
+            padding-top: calc(var(--margin) + env(safe-area-inset-top, 0px));
+            padding-bottom: calc(var(--margin) + env(safe-area-inset-bottom, 0px));
+            padding-left: calc(var(--margin) + env(safe-area-inset-left, 0px));
+            padding-right: calc(var(--margin) + env(safe-area-inset-right, 0px));
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            align-items: center;
+            gap: var(--gap);
         }
 
-        /* Header */
+        /* ── Header ── */
         .header {
+            width: 100%;
+            max-width: calc(var(--board-size) + 2px);
+            height: var(--header-h);
+            flex: 0 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 12px;
+            position: relative;
         }
 
-        .theme-btn {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: var(--board-bg);
-            border: none;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 4px 10px var(--shadow-color);
-            transition: transform 0.2s, background 0.3s;
+        .back-btn {
+            width: var(--btn-size); height: var(--btn-size); min-width: var(--btn-size);
+            border-radius: 50%; background: var(--board-bg);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; border: none; outline: none; color: var(--text-main);
+            transition: transform 0.1s, background 0.3s;
+        }
+        .back-btn:active { transform: scale(0.9); }
+        .back-btn svg { width: var(--icon-size); height: var(--icon-size); }
+
+        .header-title {
+            position: absolute; left: 50%; transform: translateX(-50%);
+            max-width: calc(100% - var(--btn-size) * 2 - 40px);
+            font-size: var(--title-size); font-weight: 800; letter-spacing: 1px;
+            line-height: 1; color: var(--text-main);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
         }
 
-        .theme-btn:active {
-            transform: scale(0.9);
-        }
+        .header-right { display: flex; align-items: center; gap: 6px; }
 
-        .theme-btn svg {
-            width: 24px;
-            height: 24px;
-            fill: var(--text-main);
-            transition: fill 0.3s;
+        .theme-toggle {
+            width: var(--btn-size); height: var(--btn-size); min-width: var(--btn-size);
+            border-radius: 50%; background: var(--board-bg);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; border: none; outline: none; color: var(--text-main);
+            transition: transform 0.1s, background 0.3s;
         }
-
-        .title-container {
-            text-align: center;
-        }
-
-        .title {
-            font-size: 24px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .level-text {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--text-muted);
-        }
-
-        .score-container {
-            background: var(--board-bg);
-            padding: 10px 20px;
-            border-radius: 25px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 10px var(--shadow-color);
-            font-weight: 800;
-            font-size: 18px;
-            transition: background 0.3s;
-        }
-
-        .score-container svg {
-            width: 20px;
-            height: 20px;
-            fill: #FFD166;
-        }
+        .theme-toggle:active { transform: scale(0.9); }
+        .theme-toggle svg { width: var(--icon-size); height: var(--icon-size); color: var(--text-main); }
 
         /* Board */
         .board-bg {
@@ -366,21 +350,20 @@
 <body>
 
     <div class="app-container">
-        <!-- Header -->
         <div class="header">
-            <button class="theme-btn" id="theme-toggle">
-                <!-- Sun Icon default -->
-                <svg viewBox="0 0 24 24" id="theme-icon">
-                    <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
-                </svg>
+            <button class="back-btn" onclick="goBack()" title="Back">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
             </button>
-            <div class="title-container">
-                <div class="title">Ножі</div>
-                <div class="level-text" id="level-display">Рівень 1</div>
-            </div>
-            <div class="score-container">
-                <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                <span id="score-display">0</span>
+            <span class="header-title">Ножі</span>
+            <div class="header-right">
+                <!-- <div class="score-container">
+                    <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    <span id="score-display">0</span>
+                </div> -->
+                <button class="theme-toggle" id="theme-toggle" title="Change theme">
+                    <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                    <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </button>
             </div>
         </div>
 
@@ -421,27 +404,82 @@
     </div>
 
     <script>
-        // --- Theme System ---
-        const themeBtn = document.getElementById('theme-toggle');
-        const themeIcon = document.getElementById('theme-icon');
-        const htmlElement = document.documentElement;
-        
-        const sunPath = "M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z";
-        const moonPath = "M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z";
+        function showInterstitialAd() {
+            let payload = { action: "showInterstitial" };
+            Unity.call(JSON.stringify(payload));
+        }
 
-        let currentTheme = localStorage.getItem('theme') || 'light';
-        setTheme(currentTheme);
+        function showRewardedAd() {
+            let payload = { action: "showRewarded" };
+            Unity.call(JSON.stringify(payload));
+        }
+
+        function closeGame() {
+            let payload = { action: "close" };
+            Unity.call(JSON.stringify(payload));
+        }
+
+        function goBack() {
+            closeGame();
+        }
+
+        // ── Adaptive Layout ──
+        let safeInsetsCache = { top: 0, bottom: 0, left: 0, right: 0 };
+        (function measureSafeInsets() {
+            const probe = document.createElement('div');
+            probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;' +
+                'padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);' +
+                'padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);visibility:hidden;';
+            document.body.appendChild(probe);
+            const cs = getComputedStyle(probe);
+            safeInsetsCache = {
+                top: parseFloat(cs.paddingTop) || 0, bottom: parseFloat(cs.paddingBottom) || 0,
+                left: parseFloat(cs.paddingLeft) || 0, right: parseFloat(cs.paddingRight) || 0
+            };
+            probe.remove();
+        })();
+
+        function applyLayout() {
+            const insets = safeInsetsCache;
+            const availW = window.innerWidth - insets.left - insets.right;
+            const availH = window.innerHeight - insets.top - insets.bottom;
+            const margin = Math.round(availH * 0.025);
+            const gap = Math.round(availH * 0.018);
+            const headerH = Math.round(Math.min(Math.max(availH * 0.075, availH * 0.05), availH * 0.10));
+            const usableH = availH - margin * 2 - headerH - gap;
+            const usableW = availW - margin * 2;
+            const boardSize = Math.max(180, Math.floor(Math.min(usableH, usableW)));
+
+            const root = document.documentElement;
+            root.style.setProperty('--margin', margin + 'px');
+            root.style.setProperty('--gap', gap + 'px');
+            root.style.setProperty('--header-h', headerH + 'px');
+            root.style.setProperty('--board-size', boardSize + 'px');
+            root.style.setProperty('--btn-size', Math.round(headerH * 0.68) + 'px');
+            root.style.setProperty('--icon-size', Math.round(headerH * 0.36) + 'px');
+            root.style.setProperty('--title-size', Math.round(headerH * 0.34) + 'px');
+        }
+        applyLayout();
+        window.addEventListener('resize', applyLayout);
+
+        // ── Theme ──
+        const themeBtn = document.getElementById('theme-toggle');
+        const sunIcon = document.getElementById('sunIcon');
+        const moonIcon = document.getElementById('moonIcon');
+        let isDark = localStorage.getItem('brainGamesTheme') === 'dark';
+
+        function updateTheme() {
+            document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            sunIcon.style.display = isDark ? 'block' : 'none';
+            moonIcon.style.display = isDark ? 'none' : 'block';
+            localStorage.setItem('brainGamesTheme', isDark ? 'dark' : 'light');
+        }
+        updateTheme();
 
         themeBtn.addEventListener('click', () => {
-            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
-            setTheme(currentTheme);
-            localStorage.setItem('theme', currentTheme);
+            isDark = !isDark;
+            updateTheme();
         });
-
-        function setTheme(theme) {
-            htmlElement.setAttribute('data-theme', theme);
-            themeIcon.innerHTML = `<path d="${theme === 'light' ? sunPath : moonPath}" />`;
-        }
 
         // --- Audio Engine (Web Audio API) ---
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -670,6 +708,7 @@
                     
                     setTimeout(() => {
                         boardContainer.classList.remove('shake', 'hit-flash');
+                        showInterstitialAd();
                         showModal('Програш', `Ви влучили в інший ніж.<br>Очки: ${score}`, 'Спробувати знову', false);
                     }, 500);
 
@@ -701,6 +740,7 @@
                             colors: ['#06D6A0', '#FFD166', '#EF476F']
                         });
                         setTimeout(() => {
+                            showInterstitialAd();
                             showModal('Чудово!', `Рівень ${level} пройдено!`, 'Наступний рівень', true);
                         }, 500);
                     } else {
