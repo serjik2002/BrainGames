@@ -93,6 +93,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Nobi.UiRoundedCorners::Nobi.UiRoundedCorners.ImageWithRoundedCorners
   radius: 40
+  outlineWidth: 0
+  outlineColor: {r: 1, g: 1, b: 1, a: 1}
   image: {fileID: 5698086762756927002}
 --- !u!114 &8659507482041579384
 MonoBehaviour:
@@ -199,7 +201,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 0.74509805, g: 0.8941177, b: 0.80392164, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -228,6 +230,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Nobi.UiRoundedCorners::Nobi.UiRoundedCorners.ImageWithRoundedCorners
   radius: 16
+  outlineWidth: 0
+  outlineColor: {r: 1, g: 1, b: 1, a: 1}
   image: {fileID: 7147963337099758693}
 --- !u!1 &2929672747414098755
 GameObject:
@@ -289,7 +293,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 0.74509805, g: 0.7618971, b: 0.89411765, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -318,6 +322,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Nobi.UiRoundedCorners::Nobi.UiRoundedCorners.ImageWithRoundedCorners
   radius: 8
+  outlineWidth: 0
+  outlineColor: {r: 1, g: 1, b: 1, a: 1}
   image: {fileID: 8985851378898573936}
 --- !u!1 &5573805667842443000
 GameObject:
