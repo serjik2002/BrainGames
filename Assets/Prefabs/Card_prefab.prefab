@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 5698086762756927002}
   - component: {fileID: 957138334332704054}
   - component: {fileID: 8659507482041579384}
+  - component: {fileID: 8365586919945892886}
   m_Layer: 0
   m_Name: Card_prefab
   m_TagString: Untagged
@@ -93,8 +94,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Nobi.UiRoundedCorners::Nobi.UiRoundedCorners.ImageWithRoundedCorners
   radius: 40
-  outlineWidth: 0
-  outlineColor: {r: 1, g: 1, b: 1, a: 1}
   image: {fileID: 5698086762756927002}
 --- !u!114 &8659507482041579384
 MonoBehaviour:
@@ -140,6 +139,19 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &8365586919945892886
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 467767456691460657}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1af2d59190067947a18ed395654067c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ThemeListener
+  elementType: 3
 --- !u!1 &2329344782126735122
 GameObject:
   m_ObjectHideFlags: 0
@@ -230,8 +242,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Nobi.UiRoundedCorners::Nobi.UiRoundedCorners.ImageWithRoundedCorners
   radius: 16
-  outlineWidth: 0
-  outlineColor: {r: 1, g: 1, b: 1, a: 1}
   image: {fileID: 7147963337099758693}
 --- !u!1 &2929672747414098755
 GameObject:
@@ -322,8 +332,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Nobi.UiRoundedCorners::Nobi.UiRoundedCorners.ImageWithRoundedCorners
   radius: 8
-  outlineWidth: 0
-  outlineColor: {r: 1, g: 1, b: 1, a: 1}
   image: {fileID: 8985851378898573936}
 --- !u!1 &5573805667842443000
 GameObject:
@@ -336,6 +344,7 @@ GameObject:
   - component: {fileID: 3915592855007977692}
   - component: {fileID: 3142759885057079803}
   - component: {fileID: 7110196656915917497}
+  - component: {fileID: 4607156653673463951}
   m_Layer: 0
   m_Name: Text (TMP)
   m_TagString: Untagged
@@ -461,6 +470,19 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &4607156653673463951
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5573805667842443000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1af2d59190067947a18ed395654067c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ThemeListener
+  elementType: 1
 --- !u!1 &7197679612087158174
 GameObject:
   m_ObjectHideFlags: 0
@@ -472,6 +494,7 @@ GameObject:
   - component: {fileID: 7231227255860290992}
   - component: {fileID: 1904418146284226256}
   - component: {fileID: 9092389864395719544}
+  - component: {fileID: 242484608423724940}
   m_Layer: 0
   m_Name: Text (TMP) (1)
   m_TagString: Untagged
@@ -597,3 +620,16 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &242484608423724940
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7197679612087158174}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1af2d59190067947a18ed395654067c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ThemeListener
+  elementType: 2

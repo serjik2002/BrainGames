@@ -184,7 +184,7 @@ public class AdManager : MonoBehaviour
 
     public void ShowInterstitialAd()
     {
-        if (options.Options.GetBool("Advertisement.noads", false))
+        if (Options.GetBool("Advertisement.noads", false))
         {
             Debug.Log("[Ads] Рекламу не показано, бо її вимкнено покупкою.");
             return;
@@ -253,7 +253,7 @@ public class AdManager : MonoBehaviour
 
     public void ShowBannerAd()
     {
-        if (options.Options.GetBool("Advertisement.noads", false))
+        if (Options.GetBool("Advertisement.noads", false))
         {
             Debug.Log("[Ads] Рекламу не показано, бо її вимкнено покупкою.");
             return;

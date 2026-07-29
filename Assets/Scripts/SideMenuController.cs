@@ -148,10 +148,17 @@ public class SideMenuController : MonoBehaviour
 
     private void ToggleTheme()
     {
-        _isDarkTheme = !_isDarkTheme;
-        PlayerPrefs.SetInt("IsDarkTheme", _isDarkTheme ? 1 : 0);
-        PlayerPrefs.Save();
 
+        var currentTheme = ThemeManager.Instance.CurrentTheme;
+        if (currentTheme == ThemeType.Light)
+        {
+            ThemeManager.Instance.SetTheme(ThemeType.Dark);
+        }
+        else
+        {
+            ThemeManager.Instance.SetTheme(ThemeType.Light);
+        }
+        _isDarkTheme = !_isDarkTheme;
         ApplyThemeState();
         UpdateSettingsUI();
     }
