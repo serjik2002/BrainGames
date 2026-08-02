@@ -6,6 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Block Blast</title>
     <style>
+        /* ================================================================
+           CSS-only адаптивная вёрстка: clamp / dvh / aspect-ratio / cqw.
+           Никакого JS-расчёта геометрии.
+           ================================================================ */
+
+        /* --- Портретная ориентация (default) --- */
         :root {
             --bg-color: #f8f9fa;
             --text-color: #1c2331;
@@ -14,24 +20,63 @@
             --primary: #06D6A0;
             --shadow: rgba(0, 0, 0, 0.1);
 
-            /* ==== Всё, что ниже, выставляется в JS функцией applyLayout().
-               Значения по умолчанию — просто чтобы страница не "прыгала"
-               до первого расчёта. Каждое значение — конкретный px,
-               посчитанный из реального innerWidth/innerHeight на этот кадр,
-               а не единый общий "scale" на всё подряд. ==== */
-            --margin: 16px;
-            --gap: 12px;
-            --header-h: 64px;
-            --tray-h: 120px;
-            --tray-w: 120px;
-            --board-size: 320px;
-            --btn-size: 44px;
-            --icon-size: 22px;
-            --title-size: 22px;
-            --score-size: 18px;
-            --cell-gap: 3px;
-            --shape-block: 20px;
-            --shape-gap: 2px;
+            /* Геометрия (vh-фолбек для старых WebView без dvh) */
+            --margin: clamp(8px, 2.5vh, 24px);
+            --gap: clamp(4px, 1.8vh, 16px);
+            --header-h: clamp(32px, 7.5vh, 64px);
+
+            /* Производные от высоты шапки */
+            --btn-size: calc(var(--header-h) * 0.68);
+            --icon-size: calc(var(--header-h) * 0.36);
+            --title-size: calc(var(--header-h) * 0.34);
+            --score-size: calc(var(--header-h) * 0.28);
+            --score-pad-v: calc(var(--header-h) * 0.12);
+            --score-pad-h: calc(var(--header-h) * 0.22);
+            --score-radius: calc(var(--header-h) * 0.35);
+
+            /* Блоки фигур — масштабируются через vmin (приблизительно пропорционально доске) */
+            --shape-block: clamp(7px, 4vmin, 20px);
+            --shape-gap: clamp(1px, 0.4vmin, 3px);
+            --shape-radius: clamp(2px, 0.6vmin, 5px);
+
+            /* Модальное окно */
+            --modal-padding: clamp(10px, 3vh, 28px);
+            --modal-radius: clamp(8px, 2vh, 18px);
+            --modal-title-size: clamp(16px, 3vh, 32px);
+            --modal-text-size: clamp(12px, 2vh, 20px);
+            --modal-btn-size: clamp(12px, 2vh, 20px);
+        }
+
+        @supports (height: 100dvh) {
+            :root {
+                --margin: clamp(8px, 2.5dvh, 24px);
+                --gap: clamp(4px, 1.8dvh, 16px);
+                --header-h: clamp(32px, 7.5dvh, 64px);
+                --modal-padding: clamp(10px, 3dvh, 28px);
+                --modal-radius: clamp(8px, 2dvh, 18px);
+                --modal-title-size: clamp(16px, 3dvh, 32px);
+                --modal-text-size: clamp(12px, 2dvh, 20px);
+                --modal-btn-size: clamp(12px, 2dvh, 20px);
+            }
+        }
+
+        /* --- Ландшафтная ориентация --- */
+        @media (orientation: landscape) {
+            :root {
+                --margin: clamp(12px, 3.5vh, 32px);
+                --gap: clamp(6px, 3vh, 20px);
+                --header-h: clamp(40px, 12vh, 80px);
+            }
+        }
+
+        @media (orientation: landscape) {
+            @supports (height: 100dvh) {
+                :root {
+                    --margin: clamp(12px, 3.5dvh, 32px);
+                    --gap: clamp(6px, 3dvh, 20px);
+                    --header-h: clamp(40px, 12dvh, 80px);
+                }
+            }
         }
 
         [data-theme="dark"] {
@@ -65,27 +110,23 @@
             transition: background 0.3s;
         }
 
-        /* Корневой контейнер игры. Ничего не центрируется "само по себе" через
-           flex/margin — все размеры и позиции ставит JS (calcLayout),
-           поэтому контейнер просто на весь экран. */
+        /* Корневой контейнер — flex-колонка на всю высоту */
         .app-container {
-            position: fixed;
-            inset: 0;
+            height: 100vh;
+            height: 100dvh;
             padding-top: calc(var(--margin) + env(safe-area-inset-top, 0px));
             padding-bottom: calc(var(--margin) + env(safe-area-inset-bottom, 0px));
             padding-left: calc(var(--margin) + env(safe-area-inset-left, 0px));
             padding-right: calc(var(--margin) + env(safe-area-inset-right, 0px));
             display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: stretch;
             gap: var(--gap);
         }
 
-        /* Top bar. Высота, шрифты и кнопки — все в var(), посчитаны от
-           реальной доступной высоты экрана в JS. */
+        /* Верхняя панель */
         .header {
             width: 100%;
-            max-width: calc(var(--board-size) + 2px);
             height: var(--header-h);
             flex: 0 0 auto;
             display: flex;
@@ -112,14 +153,8 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        .back-btn:active {
-            transform: scale(0.9);
-        }
-
-        .back-btn svg {
-            width: var(--icon-size);
-            height: var(--icon-size);
-        }
+        .back-btn:active { transform: scale(0.9); }
+        .back-btn svg { width: var(--icon-size); height: var(--icon-size); }
 
         .header-title {
             position: absolute;
@@ -157,15 +192,8 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        .theme-toggle:active {
-            transform: scale(0.9);
-        }
-
-        .theme-toggle svg {
-            width: var(--icon-size);
-            height: var(--icon-size);
-            color: var(--text-color);
-        }
+        .theme-toggle:active { transform: scale(0.9); }
+        .theme-toggle svg { width: var(--icon-size); height: var(--icon-size); color: var(--text-color); }
 
         .score-panel {
             display: flex;
@@ -180,32 +208,65 @@
             white-space: nowrap;
         }
 
-        /* Игровая зона: доска + трей. В портрете — колонка, в ландшафте — строка.
-           Это именно то, чего не было в исходнике: разные КОМПОЗИЦИИ экрана,
-           а не одна и та же, просто сжатая. */
+        /* Игровая зона: доска + трей */
         .game-area {
             flex: 1 1 auto;
             width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: space-evenly;
             gap: var(--gap);
             min-height: 0;
         }
 
-        .app-container.landscape .game-area {
-            flex-direction: row;
+        /* В ландшафте — доска и трей рядом */
+        @media (orientation: landscape) {
+            .game-area {
+                flex-direction: row;
+            }
         }
 
+        /* Доска — квадратная, размер через min() с оценкой места под трей */
         .board-wrapper {
-            background: var(--board-bg);
-            padding: var(--board-padding);
-            border-radius: var(--board-radius);
-            box-shadow: 0 8px var(--shadow);
-            width: var(--board-size);
-            height: var(--board-size);
+            --avail-h: calc(100vh - var(--header-h) - var(--gap) * 2 - 2 * var(--margin)
+                - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            --tray-est: clamp(60px, 20vh, 140px);
+            width: min(100%, calc(var(--avail-h) - var(--tray-est)));
+            aspect-ratio: 1 / 1;
             flex: 0 0 auto;
+            align-self: center;
+            container-type: size;
+            background: var(--board-bg);
+            padding: 3.5cqw;
+            border-radius: 4.5cqw;
+            box-shadow: 0 8px var(--shadow);
+        }
+
+        @supports (height: 100dvh) {
+            .board-wrapper {
+                --avail-h: calc(100dvh - var(--header-h) - var(--gap) * 2 - 2 * var(--margin)
+                    - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            }
+        }
+
+        /* В ландшафте доска ограничена шириной (трей справа) */
+        @media (orientation: landscape) {
+            .board-wrapper {
+                --avail-w: calc(100vw - 2 * var(--margin)
+                    - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+                --tray-est-w: clamp(60px, 17vw, 120px);
+                width: min(var(--avail-h), calc(var(--avail-w) - var(--tray-est-w) - var(--gap)));
+            }
+        }
+
+        @media (orientation: landscape) {
+            @supports (width: 100dvw) {
+                .board-wrapper {
+                    --avail-w: calc(100dvw - 2 * var(--margin)
+                        - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+                }
+            }
         }
 
         .board {
@@ -213,12 +274,12 @@
             height: 100%;
             display: grid;
             grid-template-columns: repeat(8, 1fr);
-            gap: var(--cell-gap);
+            gap: clamp(2px, 0.6cqw, 5px);
         }
 
         .cell {
             background: var(--cell-bg);
-            border-radius: var(--cell-radius);
+            border-radius: clamp(2px, 2cqw, 12px);
             transition: transform 0.1s, opacity 0.1s;
         }
 
@@ -240,22 +301,24 @@
             box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
         }
 
-        /* Трей с фигурами — без подложки, только контейнер */
+        /* Трей с фигурами */
         .hand {
             display: flex;
-            flex: 0 0 auto;
+            flex: 0 1 auto;
+            min-height: calc(var(--shape-block) * 5 + 16px);
+            max-height: 40vh;
             justify-content: space-around;
             align-items: center;
             width: 100%;
-            max-width: var(--board-size);
-            height: var(--tray-h);
+            max-width: 100%;
         }
 
-        .app-container.landscape .hand {
-            flex-direction: column;
-            width: var(--tray-w);
-            max-width: none;
-            height: var(--board-size);
+        @media (orientation: landscape) {
+            .hand {
+                flex-direction: column;
+                width: auto;
+                height: 100%;
+            }
         }
 
         .shape-container {
@@ -324,9 +387,7 @@
             transition: transform 0.1s;
         }
 
-        .btn:active {
-            transform: scale(0.95);
-        }
+        .btn:active { transform: scale(0.95); }
     </style>
 </head>
 
@@ -425,7 +486,6 @@
         const boardEl = document.getElementById('board');
         const handEl = document.getElementById('hand');
         const scoreEl = document.getElementById('score');
-        const appContainer = document.getElementById('appContainer');
         let grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(0));
         let score = 0;
         let streak = 0;
@@ -481,155 +541,18 @@
             }
         }
 
-        // =====================================================================
-        // РЕСПОНЗИВНЫЙ ЛЕЙАУТ (по образцу calcLayout() из Konva-игры)
-        //
-        // Идея: НИЧЕГО не завязано на один общий "scale" и нет эталонного
-        // canvas-разрешения. При каждом resize мы заново считаем реальные px
-        // всех ключевых блоков как доли от актуального innerWidth/innerHeight,
-        // отдельно для портретной и альбомной ориентации — потому что это не
-        // одна и та же композиция, сжатая в размере, а два разных расклада.
-        // =====================================================================
+        // Drag lift — динамически по размеру трея/хедера, обновляется при старте драга
+        let dragLift = 80;
 
-        const LAYOUT_CFG = {
-            portrait: {
-                marginRatio: 0.025,   // отступы контейнера, доля от доступной высоты
-                gapRatio: 0.018,      // зазор между header/доской/треем
-                headerRatio: 0.075,   // высота хедера
-                headerMinRatio: 0.05, headerMaxRatio: 0.10,
-                trayRatio: 0.175,     // высота трея с фигурами
-                trayMinRatio: 0.20, trayMaxRatio: 0.36,
-            },
-            landscape: {
-                marginRatio: 0.035,
-                gapRatio: 0.03,
-                headerRatio: 0.12,
-                headerMinRatio: 0.06, headerMaxRatio: 0.14,
-                trayWidthRatio: 0.17, // в ландшафте трей — вертикальная колонка сбоку
-                trayMinRatio: 0.15, trayMaxRatio: 0.30,
-            }
-        };
-
-        function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
-
-        // Разово меряем safe-area через служебный div (надёжнее, чем парсить env() в JS).
-        let safeInsetsCache = { top: 0, bottom: 0, left: 0, right: 0 };
-        (function measureSafeInsets() {
-            const probe = document.createElement('div');
-            probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;' +
-                'padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);' +
-                'padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);' +
-                'visibility:hidden;';
-            document.body.appendChild(probe);
-            const cs = getComputedStyle(probe);
-            safeInsetsCache = {
-                top: parseFloat(cs.paddingTop) || 0,
-                bottom: parseFloat(cs.paddingBottom) || 0,
-                left: parseFloat(cs.paddingLeft) || 0,
-                right: parseFloat(cs.paddingRight) || 0
-            };
-            probe.remove();
-        })();
-
-        // Смещение фигуры над пальцем при драге — раньше было хардкод -80px.
-        // Теперь считается от реального размера трея/хедера, чтобы всегда
-        // поднимать фигуру ровно настолько, чтобы её не закрывал палец,
-        // вне зависимости от экрана.
-        let DRAG_LIFT = 80;
-
-        function calcLayout() {
-            const insets = safeInsetsCache;
-            const availW = window.innerWidth - insets.left - insets.right;
-            const availH = window.innerHeight - insets.top - insets.bottom;
-            const isPortrait = availH >= availW;
-            const cfg = isPortrait ? LAYOUT_CFG.portrait : LAYOUT_CFG.landscape;
-
-            const margin = Math.round(availH * cfg.marginRatio);
-            const gap = Math.round(availH * cfg.gapRatio);
-            const headerH = Math.round(clamp(availH * cfg.headerRatio, availH * cfg.headerMinRatio, availH * cfg.headerMaxRatio));
-
-            let trayH, trayW, boardSize;
-
+        function updateDragLift() {
+            const isPortrait = window.innerHeight >= window.innerWidth;
             if (isPortrait) {
-                trayH = Math.round(clamp(availH * cfg.trayRatio, availH * cfg.trayMinRatio, availH * cfg.trayMaxRatio));
-                const usableH = availH - margin * 2 - headerH - trayH - gap * 2;
-                const usableW = availW - margin * 2;
-                boardSize = Math.max(180, Math.floor(Math.min(usableH, usableW)));
-                trayW = boardSize;
+                dragLift = Math.round(handEl.getBoundingClientRect().height * 0.65);
             } else {
-                trayW = Math.round(clamp(availW * cfg.trayWidthRatio, availW * cfg.trayMinRatio, availW * cfg.trayMaxRatio));
-                const usableH = availH - margin * 2 - headerH - gap;
-                const usableW = availW - margin * 2 - trayW - gap;
-                boardSize = Math.max(180, Math.floor(Math.min(usableH, usableW)));
-                trayH = boardSize;
+                const headerEl = document.querySelector('.header');
+                dragLift = Math.round((headerEl ? headerEl.getBoundingClientRect().height : 48) * 0.65);
             }
-
-            return { isPortrait, margin, gap, headerH, trayH, trayW, boardSize };
         }
-
-        function applyLayout() {
-            const L = calcLayout();
-            const root = document.documentElement;
-
-            appContainer.classList.toggle('landscape', !L.isPortrait);
-            appContainer.classList.toggle('portrait', L.isPortrait);
-
-            const cellSize = L.boardSize / GRID_SIZE;
-
-            root.style.setProperty('--margin', L.margin + 'px');
-            root.style.setProperty('--gap', L.gap + 'px');
-            root.style.setProperty('--header-h', L.headerH + 'px');
-            root.style.setProperty('--tray-h', L.trayH + 'px');
-            root.style.setProperty('--tray-w', L.trayW + 'px');
-            root.style.setProperty('--board-size', L.boardSize + 'px');
-
-            // Кнопки/иконки/шрифты хедера — доля от высоты хедера (а не от cellSize),
-            // потому что визуально они принадлежат хедеру, а не доске.
-            root.style.setProperty('--btn-size', Math.round(L.headerH * 0.68) + 'px');
-            root.style.setProperty('--icon-size', Math.round(L.headerH * 0.36) + 'px');
-            root.style.setProperty('--title-size', Math.round(L.headerH * 0.34) + 'px');
-            root.style.setProperty('--score-size', Math.round(L.headerH * 0.28) + 'px');
-
-            // Клетки доски и блоки фигур — доля от реального размера клетки,
-            // посчитанного из итогового boardSize.
-            root.style.setProperty('--cell-gap', Math.max(2, Math.round(cellSize * 0.05)) + 'px');
-            root.style.setProperty('--shape-block', Math.round(cellSize * 0.40) + 'px');
-            root.style.setProperty('--shape-gap', Math.max(1, Math.round(cellSize * 0.05)) + 'px');
-
-            // Скругления и отступы — доли от boardSize
-            root.style.setProperty('--board-padding', Math.round(L.boardSize * 0.028) + 'px');
-            root.style.setProperty('--board-radius', Math.round(L.boardSize * 0.035) + 'px');
-            root.style.setProperty('--cell-radius', Math.round(cellSize * 0.14) + 'px');
-            root.style.setProperty('--shape-radius', Math.round(cellSize * 0.07) + 'px');
-
-            // Модальное окно
-            root.style.setProperty('--modal-padding', Math.round(L.boardSize * 0.07) + 'px');
-            root.style.setProperty('--modal-radius', Math.round(L.boardSize * 0.05) + 'px');
-            root.style.setProperty('--modal-title-size', Math.round(L.boardSize * 0.065) + 'px');
-            root.style.setProperty('--modal-text-size', Math.round(L.boardSize * 0.04) + 'px');
-            root.style.setProperty('--modal-btn-size', Math.round(L.boardSize * 0.042) + 'px');
-
-            // Отступы в score-panel — доля от btn-size
-            root.style.setProperty('--score-pad-v', Math.round(L.headerH * 0.12) + 'px');
-            root.style.setProperty('--score-pad-h', Math.round(L.headerH * 0.22) + 'px');
-            root.style.setProperty('--score-radius', Math.round(L.headerH * 0.35) + 'px');
-
-            DRAG_LIFT = Math.round((L.isPortrait ? L.trayH : L.headerH) * 0.65);
-        }
-
-        // Надёжный ресайз: ResizeObserver + fallback на resize/orientationchange
-        let layoutResizeTimeout;
-        function scheduleLayout() {
-            clearTimeout(layoutResizeTimeout);
-            layoutResizeTimeout = setTimeout(applyLayout, 30);
-        }
-        if (window.ResizeObserver) {
-            new ResizeObserver(scheduleLayout).observe(document.documentElement);
-        } else {
-            window.addEventListener('resize', scheduleLayout);
-            window.addEventListener('orientationchange', scheduleLayout);
-        }
-        applyLayout();
 
         // --- SHAPES LIBRARY (weight categories) ---
         const shapesLib = [
@@ -775,6 +698,7 @@
                 isDragging = true;
                 container.setPointerCapture(e.pointerId);
                 el.classList.add('dragging');
+                updateDragLift();
                 moveAt(e.clientX, e.clientY);
             });
             container.addEventListener('pointermove', (e) => {
@@ -792,17 +716,19 @@
                 el.style.left = 'auto'; el.style.top = 'auto';
                 const cellInfo = getTargetCellMath(e.clientX, e.clientY, shapeObj.matrix);
                 if (cellInfo && canPlace(cellInfo.r, cellInfo.c, shapeObj.matrix)) {
+                    clearHighlights();
                     placeShape(cellInfo.r, cellInfo.c, shapeObj);
                     currentHand[el.dataset.index] = null;
                     container.innerHTML = '';
                     if (currentHand.every(s => s === null)) generateHand();
                     else checkGameOver();
+                } else {
+                    clearHighlights();
                 }
-                clearHighlights();
             });
             function moveAt(pageX, pageY) {
                 el.style.left = pageX + 'px';
-                el.style.top = (pageY - DRAG_LIFT) + 'px';
+                el.style.top = (pageY - dragLift) + 'px';
             }
         }
 
@@ -810,7 +736,7 @@
             const boardRect = boardEl.getBoundingClientRect();
             const cellW = boardRect.width / GRID_SIZE;
             const visualX = x;
-            const visualY = y - DRAG_LIFT;
+            const visualY = y - dragLift;
             if (visualX < boardRect.left - cellW || visualX > boardRect.right + cellW ||
                 visualY < boardRect.top - cellW || visualY > boardRect.bottom + cellW) return null;
             const centerC = Math.floor((visualX - boardRect.left) / cellW);
@@ -870,8 +796,8 @@
                     }
                 }
             }
-            score += blocksPlaced;
-            scoreEl.innerText = score;
+            // score += blocksPlaced;
+            // scoreEl.innerText = score;
             initAudio();
             playSound('place');
             checkClears();
@@ -891,7 +817,7 @@
                 playSound('clear');
                 streak++;
                 score += (100 * totalLines) * totalLines * streak;
-                scoreEl.innerText = score;
+                // scoreEl.innerText = score;
                 const cellsToClear = new Set();
                 rowsToClear.forEach(r => { for (let c = 0; c < GRID_SIZE; c++) { grid[r][c] = 0; cellsToClear.add(`cell-${r}-${c}`); } });
                 colsToClear.forEach(c => { for (let r = 0; r < GRID_SIZE; r++) { grid[r][c] = 0; cellsToClear.add(`cell-${r}-${c}`); } });

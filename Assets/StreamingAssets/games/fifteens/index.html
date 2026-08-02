@@ -6,6 +6,10 @@
     <title>Fifteen - Brain Games</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
+        /* ================================================================
+           CSS-only адаптивная вёрстка: clamp / dvh / aspect-ratio / cqw
+           ================================================================ */
+
         :root {
             --bg-color: #F8F9FA;
             --text-color: #1C2331;
@@ -17,24 +21,53 @@
             --btn-shadow: rgba(0, 0, 0, 0.05);
             --primary: #06D6A0;
 
-            /* fallback — переопределяются в JS */
-            --margin: 16px;
-            --gap: 12px;
-            --header-h: 64px;
-            --board-size: 320px;
-            --btn-size: 44px;
-            --icon-size: 22px;
-            --title-size: 22px;
-            --tile-gap: 3px;
-            --tile-radius: 10px;
-            --tile-font-size: 28px;
-            --board-padding: 8px;
-            --board-radius: 16px;
-            --modal-padding: 24px;
-            --modal-radius: 18px;
-            --modal-title-size: 24px;
-            --modal-text-size: 16px;
-            --modal-btn-size: 18px;
+            /* Геометрия (vh-фолбек) */
+            --margin: clamp(8px, 2.5vh, 24px);
+            --gap: clamp(4px, 1.8vh, 16px);
+            --header-h: clamp(32px, 7.5vh, 64px);
+
+            /* Производные от шапки */
+            --btn-size: calc(var(--header-h) * 0.68);
+            --icon-size: calc(var(--header-h) * 0.36);
+            --title-size: calc(var(--header-h) * 0.34);
+
+            /* Модальное окно */
+            --modal-padding: clamp(10px, 3vh, 28px);
+            --modal-radius: clamp(8px, 2vh, 18px);
+            --modal-title-size: clamp(16px, 3vh, 32px);
+            --modal-text-size: clamp(12px, 2vh, 20px);
+            --modal-btn-size: clamp(12px, 2vh, 20px);
+        }
+
+        @supports (height: 100dvh) {
+            :root {
+                --margin: clamp(8px, 2.5dvh, 24px);
+                --gap: clamp(4px, 1.8dvh, 16px);
+                --header-h: clamp(32px, 7.5dvh, 64px);
+                --modal-padding: clamp(10px, 3dvh, 28px);
+                --modal-radius: clamp(8px, 2dvh, 18px);
+                --modal-title-size: clamp(16px, 3dvh, 32px);
+                --modal-text-size: clamp(12px, 2dvh, 20px);
+                --modal-btn-size: clamp(12px, 2dvh, 20px);
+            }
+        }
+
+        @media (orientation: landscape) {
+            :root {
+                --margin: clamp(12px, 3.5vh, 32px);
+                --gap: clamp(6px, 3vh, 20px);
+                --header-h: clamp(40px, 12vh, 80px);
+            }
+        }
+
+        @media (orientation: landscape) {
+            @supports (height: 100dvh) {
+                :root {
+                    --margin: clamp(12px, 3.5dvh, 32px);
+                    --gap: clamp(6px, 3dvh, 20px);
+                    --header-h: clamp(40px, 12dvh, 80px);
+                }
+            }
         }
 
         [data-theme="dark"] {
@@ -73,22 +106,20 @@
         }
 
         .app-container {
-            position: fixed;
-            inset: 0;
+            height: 100vh;
+            height: 100dvh;
             padding-top: calc(var(--margin) + env(safe-area-inset-top, 0px));
             padding-bottom: calc(var(--margin) + env(safe-area-inset-bottom, 0px));
             padding-left: calc(var(--margin) + env(safe-area-inset-left, 0px));
             padding-right: calc(var(--margin) + env(safe-area-inset-right, 0px));
             display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: stretch;
             gap: var(--gap);
         }
 
-        /* Header */
         .header {
             width: 100%;
-            max-width: calc(var(--board-size) + 2px);
             height: var(--header-h);
             flex: 0 0 auto;
             display: flex;
@@ -162,7 +193,6 @@
         .theme-toggle:active { transform: scale(0.9); }
         .theme-toggle svg { width: var(--icon-size); height: var(--icon-size); color: var(--text-color); }
 
-        /* Game area */
         .game-area {
             flex: 1 1 auto;
             width: 100%;
@@ -174,10 +204,45 @@
             min-height: 0;
         }
 
-        /* Restart button — круглая, под доской слева */
+        /* Обёртка: доска + кнопка restart, выровнены по левому краю */
+        .board-col {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: var(--gap);
+        }
+
+        .board-wrapper {
+            --avail-h: calc(100vh - var(--header-h) - var(--gap) * 2 - 2 * var(--margin)
+                - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            --max-w: calc(100vw - 2 * var(--margin)
+                - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+            width: min(var(--max-w), calc(var(--avail-h) * 0.85));
+            aspect-ratio: 1 / 1;
+            flex: 0 0 auto;
+            container-type: size;
+            background: var(--board-bg);
+            border-radius: 5cqw;
+            padding: 2.5cqw;
+            box-shadow: inset 0 6px 15px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        @supports (height: 100dvh) {
+            .board-wrapper {
+                --avail-h: calc(100dvh - var(--header-h) - var(--gap) * 2 - 2 * var(--margin)
+                    - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            }
+        }
+
+        @supports (width: 100dvw) {
+            .board-wrapper {
+                --max-w: calc(100dvw - 2 * var(--margin)
+                    - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+            }
+        }
+
         .restart-btn {
-            align-self: flex-start;
-            margin-left: calc(50% - var(--board-size) / 2);
             width: var(--btn-size);
             height: var(--btn-size);
             border-radius: 50%;
@@ -197,18 +262,6 @@
         .restart-btn:active { transform: scale(0.9); }
         .restart-btn svg { width: var(--icon-size); height: var(--icon-size); }
 
-        /* Board */
-        .board-wrapper {
-            width: var(--board-size);
-            height: var(--board-size);
-            flex: 0 0 auto;
-            background: var(--board-bg);
-            border-radius: var(--board-radius);
-            padding: var(--board-padding);
-            box-shadow: inset 0 6px 15px rgba(0,0,0,0.1);
-            position: relative;
-        }
-
         .board {
             width: 100%;
             height: 100%;
@@ -223,17 +276,17 @@
         .tile {
             width: 100%;
             height: 100%;
-            padding: var(--tile-gap);
+            padding: 1cqw;
         }
 
         .tile-inner {
             width: 100%;
             height: 100%;
-            border-radius: var(--tile-radius);
+            border-radius: 3cqw;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: var(--tile-font-size);
+            font-size: 9cqw;
             font-weight: 800;
             line-height: 1;
             color: var(--text-color);
@@ -246,7 +299,6 @@
             transition: none !important;
         }
 
-        /* Modal */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -280,9 +332,7 @@
             max-width: 90%;
         }
 
-        .modal-overlay.active .modal-content {
-            transform: translateY(0);
-        }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
 
         .modal-content h2 {
             font-size: var(--modal-title-size);
@@ -319,7 +369,7 @@
             <button class="back-btn" onclick="goBack()" title="Back">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
             </button>
-            <span class="header-title">Fifteen</span>
+            <span class="header-title">15 Puzzle</span>
             <div class="header-right">
                 <button class="theme-toggle" id="themeBtn" title="Change theme">
                     <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
@@ -329,13 +379,15 @@
         </div>
 
         <div class="game-area">
-            <div class="board-wrapper">
-                <div class="board" id="board"></div>
-            </div>
+            <div class="board-col">
+                <div class="board-wrapper">
+                    <div class="board" id="board"></div>
+                </div>
 
-            <button class="restart-btn" id="restartBtn" title="Restart">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M 20.3 13.43 a 1 1 0 0 0 -1.25 0.65 A 7.14 7.14 0 0 1 12.18 19 A 7.1 7.1 0 0 1 5 12 a 7.1 7.1 0 0 1 7.18 -7 a 7.26 7.26 0 0 1 4.65 1.67 l -2.17 -0.36 a 1 1 0 0 0 -1.15 0.83 a 1 1 0 0 0 0.83 1.15 l 4.24 0.7 h 0.17 a 1 1 0 0 0 0.34 -0.06 a 0.33 0.33 0 0 0 0.1 -0.06 a 0.78 0.78 0 0 0 0.2 -0.11 l 0.09 -0.11 c 0 -0.05 0.09 -0.09 0.13 -0.15 s 0 -0.1 0.05 -0.14 a 1.34 1.34 0 0 0 0.07 -0.18 l 0.75 -4 a 1 1 0 0 0 -2 -0.38 l -0.27 1.45 A 9.21 9.21 0 0 0 12.18 3 A 9.1 9.1 0 0 0 3 12 a 9.1 9.1 0 0 0 9.18 9 A 9.12 9.12 0 0 0 21 14.68 A 1 1 0 0 0 20.3 13.43 Z"/></svg>
-            </button>
+                <button class="restart-btn" id="restartBtn" title="Restart">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M 20.3 13.43 a 1 1 0 0 0 -1.25 0.65 A 7.14 7.14 0 0 1 12.18 19 A 7.1 7.1 0 0 1 5 12 a 7.1 7.1 0 0 1 7.18 -7 a 7.26 7.26 0 0 1 4.65 1.67 l -2.17 -0.36 a 1 1 0 0 0 -1.15 0.83 a 1 1 0 0 0 0.83 1.15 l 4.24 0.7 h 0.17 a 1 1 0 0 0 0.34 -0.06 a 0.33 0.33 0 0 0 0.1 -0.06 a 0.78 0.78 0 0 0 0.2 -0.11 l 0.09 -0.11 c 0 -0.05 0.09 -0.09 0.13 -0.15 s 0 -0.1 0.05 -0.14 a 1.34 1.34 0 0 0 0.07 -0.18 l 0.75 -4 a 1 1 0 0 0 -2 -0.38 l -0.27 1.45 A 9.21 9.21 0 0 0 12.18 3 A 9.1 9.1 0 0 0 3 12 a 9.1 9.1 0 0 0 9.18 9 A 9.12 9.12 0 0 0 21 14.68 A 1 1 0 0 0 20.3 13.43 Z"/></svg>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -348,96 +400,6 @@
     </div>
 
     <script>
-        // ================================================================
-        // АДАПТИВНАЯ ВЁРСТКА
-        // ================================================================
-
-        const LAYOUT_CFG = {
-            portrait: {
-                marginRatio: 0.025,
-                gapRatio: 0.018,
-                headerRatio: 0.075,
-                headerMinRatio: 0.05, headerMaxRatio: 0.10,
-            },
-            landscape: {
-                marginRatio: 0.035,
-                gapRatio: 0.03,
-                headerRatio: 0.12,
-                headerMinRatio: 0.06, headerMaxRatio: 0.14,
-            }
-        };
-
-        function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
-
-        let safeInsetsCache = { top: 0, bottom: 0, left: 0, right: 0 };
-        (function measureSafeInsets() {
-            const probe = document.createElement('div');
-            probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;' +
-                'padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);' +
-                'padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);' +
-                'visibility:hidden;';
-            document.body.appendChild(probe);
-            const cs = getComputedStyle(probe);
-            safeInsetsCache = {
-                top: parseFloat(cs.paddingTop) || 0,
-                bottom: parseFloat(cs.paddingBottom) || 0,
-                left: parseFloat(cs.paddingLeft) || 0,
-                right: parseFloat(cs.paddingRight) || 0
-            };
-            probe.remove();
-        })();
-
-        function calcLayout() {
-            const insets = safeInsetsCache;
-            const availW = window.innerWidth - insets.left - insets.right;
-            const availH = window.innerHeight - insets.top - insets.bottom;
-            const isPortrait = availH >= availW;
-            const cfg = isPortrait ? LAYOUT_CFG.portrait : LAYOUT_CFG.landscape;
-
-            const margin = Math.round(availH * cfg.marginRatio);
-            const gap = Math.round(availH * cfg.gapRatio);
-            const headerH = Math.round(clamp(availH * cfg.headerRatio, availH * cfg.headerMinRatio, availH * cfg.headerMaxRatio));
-
-            // game-area центрирует доску + кнопку, просто резервируем высоту
-            const usableH = availH - margin * 2 - headerH - gap;
-            const usableW = availW - margin * 2;
-            const boardSize = Math.max(180, Math.floor(Math.min(usableH * 0.85, usableW)));
-
-            return { margin, gap, headerH, boardSize };
-        }
-
-        function applyLayout() {
-            const L = calcLayout();
-            const root = document.documentElement;
-
-            root.style.setProperty('--margin', L.margin + 'px');
-            root.style.setProperty('--gap', L.gap + 'px');
-            root.style.setProperty('--header-h', L.headerH + 'px');
-            root.style.setProperty('--board-size', L.boardSize + 'px');
-
-            // Header
-            root.style.setProperty('--btn-size', Math.round(L.headerH * 0.68) + 'px');
-            root.style.setProperty('--icon-size', Math.round(L.headerH * 0.36) + 'px');
-            root.style.setProperty('--title-size', Math.round(L.headerH * 0.34) + 'px');
-
-            // Board
-            root.style.setProperty('--board-padding', Math.round(L.boardSize * 0.025) + 'px');
-            root.style.setProperty('--board-radius', Math.round(L.boardSize * 0.05) + 'px');
-            root.style.setProperty('--tile-gap', Math.round(L.boardSize * 0.01) + 'px');
-            root.style.setProperty('--tile-radius', Math.round(L.boardSize * 0.03) + 'px');
-            root.style.setProperty('--tile-font-size', Math.round(L.boardSize * 0.09) + 'px');
-
-            // Modal
-            root.style.setProperty('--modal-padding', Math.round(L.boardSize * 0.07) + 'px');
-            root.style.setProperty('--modal-radius', Math.round(L.boardSize * 0.05) + 'px');
-            root.style.setProperty('--modal-title-size', Math.round(L.boardSize * 0.065) + 'px');
-            root.style.setProperty('--modal-text-size', Math.round(L.boardSize * 0.04) + 'px');
-            root.style.setProperty('--modal-btn-size', Math.round(L.boardSize * 0.042) + 'px');
-        }
-
-        applyLayout();
-        window.addEventListener('resize', applyLayout);
-
         // ================================================================
         // ТЕМЫ
         // ================================================================
@@ -625,7 +587,8 @@
                 isLocked = true;
                 playSound('win');
 
-                const boardSz = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--board-size')) || 400;
+                const boardEl = document.querySelector('.board-wrapper');
+                const boardSz = boardEl ? boardEl.getBoundingClientRect().width : 400;
                 confetti({
                     particleCount: Math.round(boardSz * 0.35),
                     spread: Math.round(boardSz * 0.16),

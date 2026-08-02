@@ -70,8 +70,8 @@ public class SideMenuController : MonoBehaviour
 
     private void LoadSettings()
     {
-        _isDarkTheme = PlayerPrefs.GetInt("IsDarkTheme", 1) == 1;
-        _isSoundOn = PlayerPrefs.GetInt("IsSoundOn", 1) == 1;
+        _isDarkTheme = Options.GetInt("IsDarkTheme", 1) == 1;
+        _isSoundOn = Options.GetInt("IsSoundOn", 1) == 1;
 
         ApplySoundState();
         ApplyThemeState();
@@ -166,8 +166,8 @@ public class SideMenuController : MonoBehaviour
     private void ToggleSound()
     {
         _isSoundOn = !_isSoundOn;
-        PlayerPrefs.SetInt("IsSoundOn", _isSoundOn ? 1 : 0);
-        PlayerPrefs.Save();
+        Options.SetInt("IsSoundOn", _isSoundOn ? 1 : 0);
+        Options.Save();
 
         ApplySoundState();
         UpdateSettingsUI();
@@ -200,6 +200,15 @@ public class SideMenuController : MonoBehaviour
         // Обновляем текст звука
         if (_soundStatusText != null)
             _soundStatusText.text = _isSoundOn ? "On" : "Off";
+
+        if(Options.GetBool("Advertisement.noads"))
+        {
+            _removeAdsButton.gameObject.SetActive(false);
+        }
+        else
+        {
+            _removeAdsButton.gameObject.SetActive(true);
+        }
     }
 
     private void OpenPrivacyPolicy()
@@ -210,11 +219,29 @@ public class SideMenuController : MonoBehaviour
     private void BuyRemoveAds()
     {
         Debug.Log("Initiating IAP: Remove Ads...");
+        IAPManager.Instance.BuyProduct("com.uniteditforce.braingames.noads", (success, purchasedId) =>
+        {
+            if (success)
+            {
+                Debug.Log("[Settings] Рекламу успішно відключено!");
+                // Оновлюємо вигляд кнопки відразу після успішної покупки
+                Options.SetBool("Advertisement.noads", true);
+                Options.Save();
+                UpdateSettingsUI();
+
+            }
+            else
+            {
+                Debug.LogWarning("[Settings] Помилка покупки або скасування користувачем.");
+            }
+        });
     }
+
+
 
     private void ContactUs()
     {
-        string email = "support@uniteditforce.com";
+        string email = "uniteditforce@gmail.com";
         string subject = EscapeURL($"Support: Brain Games v{Application.version}");
         string body = EscapeURL("Please describe your problem here:\n\n");
 

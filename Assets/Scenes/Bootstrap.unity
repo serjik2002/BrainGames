@@ -194,7 +194,7 @@ MonoBehaviour:
   _interstitialAdId: ca-app-pub-8968740975401720/4556150657
   _bannerAdId: ca-app-pub-8968740975401720/1775477012
   _rewardedAdId: ca-app-pub-8968740975401720/9462395345
-  adFreeDurationMinutes: 2
+  adFreeDurationMinutes: 1
 --- !u!114 &372668559
 MonoBehaviour:
   m_ObjectHideFlags: 0

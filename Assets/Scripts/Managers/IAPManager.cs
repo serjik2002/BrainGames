@@ -36,7 +36,7 @@ public class IAPManager : MonoBehaviour, IDetailedStoreListener
 
         // ВАЖНО: Добавляем ID всех твоих скинов. 
         // ProductType.NonConsumable означает, что товар покупается навсегда (не монетки)
-        //builder.AddProduct("com.uniteditforce.arrows.skin.neon", ProductType.NonConsumable);
+        builder.AddProduct("com.uniteditforce.braingames.noads", ProductType.NonConsumable);
 
         UnityPurchasing.Initialize(this, builder);
     }

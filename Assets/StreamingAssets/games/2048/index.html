@@ -8,8 +8,15 @@
     <title>2048 - Brain Games</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        /* Базовые цвета и переменные темы */
+        /* ================================================================
+           Базовые цвета, переменные темы и адаптивная вёрстка (CSS-only)
+           Все размеры — через clamp / dvh / aspect-ratio / cqw.
+           Никакого JS-расчёта геометрии.
+           ================================================================ */
+
+        /* --- Портретная ориентация (default) --- */
         :root {
+            /* Тема */
             --bg-color: #F8F9FA;
             --text-color: #1C2331;
             --text-secondary: #7A8294;
@@ -17,6 +24,23 @@
             --cell-bg: #D1D6DE;
             --btn-bg: #FFFFFF;
             --btn-shadow: rgba(0, 0, 0, 0.05);
+
+            /* Геометрия (vh-фолбэк для старых WebView без dvh) */
+            --margin: clamp(8px, 2.5vh, 24px);
+            --gap: clamp(4px, 1.8vh, 16px);
+            --header-h: clamp(32px, 7.5vh, 64px);
+
+            /* Производные от высоты шапки */
+            --btn-size: calc(var(--header-h) * 0.68);
+            --icon-size: calc(var(--header-h) * 0.36);
+            --title-size: calc(var(--header-h) * 0.34);
+
+            /* Модальное окно — пропорционально экрану */
+            --modal-padding: clamp(10px, 3vh, 28px);
+            --modal-radius: clamp(8px, 2vh, 18px);
+            --modal-title-size: clamp(16px, 3vh, 32px);
+            --modal-text-size: clamp(12px, 2vh, 20px);
+            --modal-btn-size: clamp(12px, 2vh, 20px);
 
             /* Цвета плиток (Пастельные) */
             --tile-2: #FFF0D4;
@@ -42,6 +66,39 @@
             --tile-2048: #9D4EDD;
             --tile-2048-text: #FFFFFF;
             --tile-super: #3C096C;
+        }
+
+        /* dvh включаем только если браузер поддерживает */
+        @supports (height: 100dvh) {
+            :root {
+                --margin: clamp(8px, 2.5dvh, 24px);
+                --gap: clamp(4px, 1.8dvh, 16px);
+                --header-h: clamp(32px, 7.5dvh, 64px);
+                --modal-padding: clamp(10px, 3dvh, 28px);
+                --modal-radius: clamp(8px, 2dvh, 18px);
+                --modal-title-size: clamp(16px, 3dvh, 32px);
+                --modal-text-size: clamp(12px, 2dvh, 20px);
+                --modal-btn-size: clamp(12px, 2dvh, 20px);
+            }
+        }
+
+        /* --- Ландшафтная ориентация --- */
+        @media (orientation: landscape) {
+            :root {
+                --margin: clamp(12px, 3.5vh, 32px);
+                --gap: clamp(6px, 3vh, 20px);
+                --header-h: clamp(40px, 12vh, 80px);
+            }
+        }
+
+        @media (orientation: landscape) {
+            @supports (height: 100dvh) {
+                :root {
+                    --margin: clamp(12px, 3.5dvh, 32px);
+                    --gap: clamp(6px, 3dvh, 20px);
+                    --header-h: clamp(40px, 12dvh, 80px);
+                }
+            }
         }
 
         [data-theme="dark"] {
@@ -94,24 +151,23 @@
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        /* Корневой контейнер — все размеры ставит JS (calcLayout) */
+        /* Корневой контейнер — flex-колонка на всю высоту, вёрстка силами CSS */
         .app-container {
-            position: fixed;
-            inset: 0;
+            height: 100vh;               /* фолбэк */
+            height: 100dvh;              /* учитывает скрывающиеся системные бары */
             padding-top: calc(var(--margin) + env(safe-area-inset-top, 0px));
             padding-bottom: calc(var(--margin) + env(safe-area-inset-bottom, 0px));
             padding-left: calc(var(--margin) + env(safe-area-inset-left, 0px));
             padding-right: calc(var(--margin) + env(safe-area-inset-right, 0px));
             display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: stretch;
             gap: var(--gap);
         }
 
         /* Верхняя панель */
         .header {
             width: 100%;
-            max-width: calc(var(--board-size) + 2px);
             height: var(--header-h);
             flex: 0 0 auto;
             display: flex;
@@ -201,40 +257,29 @@
             color: var(--text-color);
         }
 
-        /* Очки закомментированы
-        .score-container {
-            display: flex;
-            align-items: center;
-            background-color: var(--btn-bg);
-            padding: 0.4em 0.8em;
-            border-radius: 1.5em;
-            box-shadow: 0 4px 12px var(--btn-shadow);
-            font-weight: bold;
-            font-size: var(--score-size);
-            transition: background-color 0.3s;
-            white-space: nowrap;
-        }
-
-        .score-container svg {
-            width: var(--icon-size);
-            height: var(--icon-size);
-            margin-right: 0.3em;
-            fill: #FFD166;
-        }
-        */
-
-        /* Игровое поле */
+        /* Игровое поле — квадратное, центрированное, размер через min() */
         .board-bg {
-            width: var(--board-size);
-            height: var(--board-size);
+            --avail-h: calc(100vh - var(--header-h) - var(--gap) - 2 * var(--margin)
+                - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            width: min(100%, var(--avail-h));
+            aspect-ratio: 1 / 1;
             flex: 0 0 auto;
+            align-self: center;
             margin: auto 0;
+            container-type: size;
             background-color: var(--board-bg);
-            border-radius: 4%;
+            border-radius: 2cqw;
             padding: 2%;
             position: relative;
             box-shadow: 0 8px 24px var(--btn-shadow);
             transition: background-color 0.3s;
+        }
+
+        @supports (height: 100dvh) {
+            .board-bg {
+                --avail-h: calc(100dvh - var(--header-h) - var(--gap) - 2 * var(--margin)
+                    - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            }
         }
 
         .board-grid {
@@ -244,12 +289,11 @@
             grid-template-columns: repeat(4, 1fr);
             grid-template-rows: repeat(4, 1fr);
             gap: 2.666%;
-            /* Идеальный промежуток */
         }
 
         .grid-cell {
             background-color: var(--cell-bg);
-            border-radius: var(--cell-radius);
+            border-radius: 2cqw;
             transition: background-color 0.3s;
         }
 
@@ -266,14 +310,13 @@
         .tile {
             position: absolute;
             width: 23%;
-            /* (100% - 3*gap) / 4 */
             height: 23%;
             background-color: var(--tile-2);
-            border-radius: var(--cell-radius);
+            border-radius: 2cqw;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: var(--tile-font-size);
+            font-size: 8cqw;
             font-weight: bold;
             color: var(--tile-2-text);
             /* Плавная анимация перемещения */
@@ -292,27 +335,14 @@
         }
 
         @keyframes appear {
-            0% {
-                transform: scale(0);
-            }
-
-            100% {
-                transform: scale(1);
-            }
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
         }
 
         @keyframes pop {
-            0% {
-                transform: scale(1);
-            }
-
-            50% {
-                transform: scale(1.2);
-            }
-
-            100% {
-                transform: scale(1);
-            }
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
         }
 
         /* Оверлей окончания игры */
@@ -384,71 +414,48 @@
         }
 
         /* Классы для расцветки плиток */
-        .t-2 {
-            background-color: var(--tile-2);
-            color: var(--tile-2-text);
-        }
-
-        .t-4 {
-            background-color: var(--tile-4);
-            color: var(--tile-4-text);
-        }
-
-        .t-8 {
-            background-color: var(--tile-8);
-            color: var(--tile-8-text);
-        }
-
-        .t-16 {
-            background-color: var(--tile-16);
-            color: var(--tile-16-text);
-        }
-
-        .t-32 {
-            background-color: var(--tile-32);
-            color: var(--tile-32-text);
-        }
-
-        .t-64 {
-            background-color: var(--tile-64);
-            color: var(--tile-64-text);
-        }
+        .t-2  { background-color: var(--tile-2);  color: var(--tile-2-text); }
+        .t-4  { background-color: var(--tile-4);  color: var(--tile-4-text); }
+        .t-8  { background-color: var(--tile-8);  color: var(--tile-8-text); }
+        .t-16 { background-color: var(--tile-16); color: var(--tile-16-text); }
+        .t-32 { background-color: var(--tile-32); color: var(--tile-32-text); }
+        .t-64 { background-color: var(--tile-64); color: var(--tile-64-text); }
 
         .t-128 {
             background-color: var(--tile-128);
             color: var(--tile-128-text);
-            font-size: var(--tile-font-size-sm);
+            font-size: 6.4cqw;
         }
 
         .t-256 {
             background-color: var(--tile-256);
             color: var(--tile-256-text);
-            font-size: var(--tile-font-size-sm);
+            font-size: 6.4cqw;
         }
 
         .t-512 {
             background-color: var(--tile-512);
             color: var(--tile-512-text);
-            font-size: var(--tile-font-size-sm);
+            font-size: 6.4cqw;
         }
 
         .t-1024 {
             background-color: var(--tile-1024);
             color: var(--tile-1024-text);
-            font-size: var(--tile-font-size-xs);
+            font-size: 4.8cqw;
         }
 
         .t-2048 {
             background-color: var(--tile-2048);
             color: var(--tile-2048-text);
-            font-size: var(--tile-font-size-xs);
+            font-size: 4.8cqw;
             box-shadow: 0 0 15px rgba(157, 78, 221, 0.5);
         }
 
         .t-super {
             background-color: var(--tile-super);
             color: var(--tile-2048-text);
-            font-size: var(--tile-font-size-xs);
+            font-size: 4.8cqw;
         }
     </style>
 </head>
@@ -535,92 +542,6 @@
             Unity.call(message);
         }
 
-
-        // ================================================================
-        // АДАПТИВНАЯ ВЁРСТКА
-        // ================================================================
-        const LAYOUT_CFG = {
-            portrait: {
-                marginRatio: 0.025,
-                gapRatio: 0.018,
-                headerRatio: 0.075,
-                headerMinRatio: 0.05, headerMaxRatio: 0.10,
-            },
-            landscape: {
-                marginRatio: 0.035,
-                gapRatio: 0.03,
-                headerRatio: 0.12,
-                headerMinRatio: 0.06, headerMaxRatio: 0.14,
-            }
-        };
-
-        function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
-
-        let safeInsetsCache = { top: 0, bottom: 0, left: 0, right: 0 };
-        (function measureSafeInsets() {
-            const probe = document.createElement('div');
-            probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;' +
-                'padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);' +
-                'padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);' +
-                'visibility:hidden;';
-            document.body.appendChild(probe);
-            const cs = getComputedStyle(probe);
-            safeInsetsCache = {
-                top: parseFloat(cs.paddingTop) || 0,
-                bottom: parseFloat(cs.paddingBottom) || 0,
-                left: parseFloat(cs.paddingLeft) || 0,
-                right: parseFloat(cs.paddingRight) || 0
-            };
-            probe.remove();
-        })();
-
-        function calcLayout() {
-            const insets = safeInsetsCache;
-            const availW = window.innerWidth - insets.left - insets.right;
-            const availH = window.innerHeight - insets.top - insets.bottom;
-            const isPortrait = availH >= availW;
-            const cfg = isPortrait ? LAYOUT_CFG.portrait : LAYOUT_CFG.landscape;
-
-            const margin = Math.round(availH * cfg.marginRatio);
-            const gap = Math.round(availH * cfg.gapRatio);
-            const headerH = Math.round(clamp(availH * cfg.headerRatio, availH * cfg.headerMinRatio, availH * cfg.headerMaxRatio));
-
-            const usableH = availH - margin * 2 - headerH - gap;
-            const usableW = availW - margin * 2;
-            const boardSize = Math.max(180, Math.floor(Math.min(usableH, usableW)));
-
-            return { margin, gap, headerH, boardSize };
-        }
-
-        function applyLayout() {
-            const L = calcLayout();
-            const root = document.documentElement;
-
-            root.style.setProperty('--margin', L.margin + 'px');
-            root.style.setProperty('--gap', L.gap + 'px');
-            root.style.setProperty('--header-h', L.headerH + 'px');
-            root.style.setProperty('--board-size', L.boardSize + 'px');
-
-            root.style.setProperty('--btn-size', Math.round(L.headerH * 0.68) + 'px');
-            root.style.setProperty('--icon-size', Math.round(L.headerH * 0.36) + 'px');
-            root.style.setProperty('--title-size', Math.round(L.headerH * 0.34) + 'px');
-            root.style.setProperty('--score-size', Math.round(L.headerH * 0.28) + 'px');
-
-            root.style.setProperty('--modal-padding', Math.round(L.boardSize * 0.07) + 'px');
-            root.style.setProperty('--modal-radius', Math.round(L.boardSize * 0.04) + 'px');
-            root.style.setProperty('--modal-title-size', Math.round(L.boardSize * 0.065) + 'px');
-            root.style.setProperty('--modal-text-size', Math.round(L.boardSize * 0.04) + 'px');
-            root.style.setProperty('--modal-btn-size', Math.round(L.boardSize * 0.042) + 'px');
-
-            root.style.setProperty('--tile-font-size', Math.round(L.boardSize * 0.08) + 'px');
-            root.style.setProperty('--tile-font-size-sm', Math.round(L.boardSize * 0.064) + 'px');
-            root.style.setProperty('--tile-font-size-xs', Math.round(L.boardSize * 0.048) + 'px');
-            root.style.setProperty('--cell-radius', Math.round(L.boardSize * 0.02) + 'px');
-            console.log(`Layout applied: margin=${L.margin}px, gap=${L.gap}px, headerH=${L.headerH}px, boardSize=${L.boardSize}px`);
-        }
-
-        applyLayout();
-        window.addEventListener('resize', applyLayout);
 
         // --- АУДИО ДВИЖОК (Web Audio API) ---
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -916,15 +837,12 @@
                     }
                 });
 
-                // Рендерим промежуточное состояние (сдвиг)
                 renderBoard();
 
                 if (hasMerged) playSound('merge');
                 else playSound('slide');
 
-                // Ждем окончания CSS анимации (150ms) перед добавлением новой плитки
                 setTimeout(() => {
-                    // Теперь безопасно удаляем слитые плитки из DOM
                     const elementsToRemove = document.querySelectorAll('.tile.to-remove');
                     elementsToRemove.forEach(el => el.remove());
 
@@ -937,13 +855,11 @@
         }
 
         function checkGameOver() {
-            // Есть пустые?
             for (let r = 0; r < SIZE; r++) {
                 for (let c = 0; c < SIZE; c++) {
                     if (board[r][c] === null) return;
                 }
             }
-            // Можно слить?
             for (let r = 0; r < SIZE; r++) {
                 for (let c = 0; c < SIZE; c++) {
                     let val = board[r][c].val;
@@ -951,16 +867,15 @@
                     if (c < SIZE - 1 && board[r][c + 1].val === val) return;
                 }
             }
-
-            // Если дошли сюда — проигрыш
             showInterstitialAd();
-            showModal("Поражение!", ""); // Очки закомментированы
+            showModal("Поражение!", "");
         }
 
         function triggerWin() {
             hasWon = true;
             playSound('win');
-            const boardSz = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--board-size')) || 400;
+            const boardEl = document.querySelector('.board-bg');
+            const boardSz = boardEl ? boardEl.getBoundingClientRect().width : 400;
             confetti({
                 particleCount: Math.round(boardSz * 0.35),
                 spread: Math.round(boardSz * 0.16),
@@ -1029,7 +944,6 @@
             }
         }, { passive: false });
 
-        // Запуск
         window.onload = initBoard;
 
     </script>

@@ -9,16 +9,40 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap');
 
+        /* ================================================================
+           CSS-only адаптивна вёрстка: clamp / dvh / aspect-ratio / cqw
+           Жодного JS-розрахунку геометрії.
+           ================================================================ */
+
+        /* --- Портретна орієнтація (default) --- */
         :root {
-            /* Світла тема */
+            /* Тема */
             --bg-color: #F8F9FA;
             --text-main: #1C2331;
             --text-sub: #7A8294;
             --board-bg: #E9ECEF;
             --panel-bg: #FFFFFF;
             --shadow-color: rgba(0, 0, 0, 0.05);
-            
-            /* Палітра блоків (Brain Games) */
+
+            /* Геометрія (vh-фолбек для старих WebView без dvh) */
+            --margin: clamp(8px, 2.5vh, 24px);
+            --gap: clamp(4px, 1.8vh, 16px);
+            --header-h: clamp(32px, 7.5vh, 64px);
+
+            /* Похідні від висоти шапки */
+            --btn-size: calc(var(--header-h) * 0.68);
+            --icon-size: calc(var(--header-h) * 0.36);
+            --title-size: calc(var(--header-h) * 0.34);
+            --score-size: calc(var(--header-h) * 0.28);
+
+            /* Модальне вікно — пропорційно екрану */
+            --modal-padding: clamp(10px, 3vh, 28px);
+            --modal-radius: clamp(8px, 2vh, 18px);
+            --modal-title-size: clamp(16px, 3vh, 32px);
+            --modal-text-size: clamp(12px, 2vh, 20px);
+            --modal-btn-size: clamp(12px, 2vh, 20px);
+
+            /* Палітра блоків */
             --color-1: #EF476F;
             --color-2: #FFD166;
             --color-3: #06D6A0;
@@ -26,21 +50,49 @@
             --color-5: #9D4EDD;
             --color-6: #F78C6B;
             --color-7: #4ECDC4;
-            
-            /* Тінь блоків */
             --block-shadow: rgba(0, 0, 0, 0.15);
         }
 
+        /* dvh включаємо тільки якщо браузер підтримує */
+        @supports (height: 100dvh) {
+            :root {
+                --margin: clamp(8px, 2.5dvh, 24px);
+                --gap: clamp(4px, 1.8dvh, 16px);
+                --header-h: clamp(32px, 7.5dvh, 64px);
+                --modal-padding: clamp(10px, 3dvh, 28px);
+                --modal-radius: clamp(8px, 2dvh, 18px);
+                --modal-title-size: clamp(16px, 3dvh, 32px);
+                --modal-text-size: clamp(12px, 2dvh, 20px);
+                --modal-btn-size: clamp(12px, 2dvh, 20px);
+            }
+        }
+
+        /* --- Ландшафтна орієнтація --- */
+        @media (orientation: landscape) {
+            :root {
+                --margin: clamp(12px, 3.5vh, 32px);
+                --gap: clamp(6px, 3vh, 20px);
+                --header-h: clamp(40px, 12vh, 80px);
+            }
+        }
+
+        @media (orientation: landscape) {
+            @supports (height: 100dvh) {
+                :root {
+                    --margin: clamp(12px, 3.5dvh, 32px);
+                    --gap: clamp(6px, 3dvh, 20px);
+                    --header-h: clamp(40px, 12dvh, 80px);
+                }
+            }
+        }
+
         [data-theme="dark"] {
-            /* Темна тема */
             --bg-color: #121212;
             --text-main: #FFFFFF;
             --text-sub: #A0AABF;
             --board-bg: #1E1E1E;
             --panel-bg: #2C2C2C;
             --shadow-color: rgba(0, 0, 0, 0.2);
-            
-            /* Приглушені кольори блоків для темної теми */
             --color-1: #D63D60;
             --color-2: #E6BC5C;
             --color-3: #05BC8C;
@@ -71,24 +123,23 @@
             transition: background-color 0.3s, color 0.3s;
         }
 
-        /* Корневой контейнер — все размеры ставит JS (calcLayout) */
+        /* Кореневий контейнер — flex-колонка на всю висоту */
         .app-container {
-            position: fixed;
-            inset: 0;
+            height: 100vh;
+            height: 100dvh;
             padding-top: calc(var(--margin) + env(safe-area-inset-top, 0px));
             padding-bottom: calc(var(--margin) + env(safe-area-inset-bottom, 0px));
             padding-left: calc(var(--margin) + env(safe-area-inset-left, 0px));
             padding-right: calc(var(--margin) + env(safe-area-inset-right, 0px));
             display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: stretch;
             gap: var(--gap);
         }
 
-        /* Верхняя панель */
+        /* Верхня панель */
         .header {
             width: 100%;
-            max-width: calc(var(--board-size) + 2px);
             height: var(--header-h);
             flex: 0 0 auto;
             display: flex;
@@ -120,7 +171,7 @@
         .back-btn:active { transform: scale(0.9); }
         .back-btn svg { width: var(--icon-size); height: var(--icon-size); }
 
-        /* Название игры по центру (абсолютное позиционирование) */
+        /* Назва гри по центру (абсолютне позиціонування) */
         .header-title {
             position: absolute;
             left: 50%;
@@ -137,7 +188,7 @@
             pointer-events: none;
         }
 
-        /* Правая группа: уровень + тема */
+        /* Права група: рівень + тема */
         .header-right {
             display: flex;
             align-items: center;
@@ -179,19 +230,30 @@
 
         .level-panel span { color: var(--text-main); }
 
-        /* Игровое поле */
+        /* Ігрове поле — квадратне, центроване, розмір через min() */
         .board-wrapper {
-            width: var(--board-size);
-            height: var(--board-size);
+            --avail-h: calc(100vh - var(--header-h) - var(--gap) - 2 * var(--margin)
+                - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            width: min(100%, var(--avail-h));
+            aspect-ratio: 1 / 1;
             flex: 0 0 auto;
+            align-self: center;
             margin: auto 0;
+            container-type: size;
             background-color: var(--board-bg);
-            border-radius: 4%;
+            border-radius: 2cqw;
             padding: 2%;
             box-shadow: inset 0 4px 10px rgba(0,0,0,0.05);
             position: relative;
             overflow: visible;
             transition: background-color 0.3s;
+        }
+
+        @supports (height: 100dvh) {
+            .board-wrapper {
+                --avail-h: calc(100dvh - var(--header-h) - var(--gap) - 2 * var(--margin)
+                    - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            }
         }
 
         .board {
@@ -203,18 +265,18 @@
         /* Блоки зі стрілочками */
         .block-container {
             position: absolute;
-            transition: top 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), 
-                        left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), 
-                        transform 0.4s cubic-bezier(0.5, 0, 0.2, 1), 
+            transition: top 0.3s cubic-bezier(0.4, 0.0, 0.2, 1),
+                        left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1),
+                        transform 0.4s cubic-bezier(0.5, 0, 0.2, 1),
                         opacity 0.3s;
-            padding: 2%; /* Відступ між блоками */
+            padding: 2%;
         }
 
         .block {
             width: 100%;
             height: 100%;
-            border-radius: 20px;
-            box-shadow: 0 6px 0 var(--block-shadow);
+            border-radius: 2.5cqw;
+            box-shadow: 0 1.5cqw 0 var(--block-shadow);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -224,14 +286,14 @@
         }
 
         .block:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px 0 var(--block-shadow);
+            transform: translateY(1cqw);
+            box-shadow: 0 0.5cqw 0 var(--block-shadow);
         }
 
         .block svg {
             width: 60%;
             height: 60%;
-            fill: var(--block-shadow); /* Іконка кольору тіні */
+            fill: var(--block-shadow);
             pointer-events: none;
         }
 
@@ -247,11 +309,11 @@
         .fly-LEFT { transform: translateX(-1000px); opacity: 0; }
         .fly-RIGHT { transform: translateX(1000px); opacity: 0; }
 
-        /* Анімації удару (коли шлях заблоковано) */
-        @keyframes bump-UP { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        @keyframes bump-DOWN { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(10px); } }
-        @keyframes bump-LEFT { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-10px); } }
-        @keyframes bump-RIGHT { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(10px); } }
+        /* Анімації удару */
+        @keyframes bump-UP { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2.5cqw); } }
+        @keyframes bump-DOWN { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(2.5cqw); } }
+        @keyframes bump-LEFT { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-2.5cqw); } }
+        @keyframes bump-RIGHT { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(2.5cqw); } }
 
         .bump-UP .block { animation: bump-UP 0.2s ease-in-out; }
         .bump-DOWN .block { animation: bump-DOWN 0.2s ease-in-out; }
@@ -292,21 +354,10 @@
             max-width: 90vw;
         }
 
-        .overlay.active .modal {
-            transform: translateY(0);
-        }
+        .overlay.active .modal { transform: translateY(0); }
 
-        .modal h2 {
-            font-size: var(--modal-title-size);
-            margin-bottom: 0.3em;
-            color: var(--text-main);
-        }
-
-        .modal p {
-            color: var(--text-sub);
-            font-size: var(--modal-text-size);
-            margin-bottom: 0.8em;
-        }
+        .modal h2 { font-size: var(--modal-title-size); margin-bottom: 0.3em; color: var(--text-main); }
+        .modal p { color: var(--text-sub); font-size: var(--modal-text-size); margin-bottom: 0.8em; }
 
         .btn-next {
             background-color: var(--color-3);
@@ -361,101 +412,6 @@
 </div>
 
 <script>
-    // ================================================================
-    // АДАПТИВНАЯ ВЁРСТКА (как в block_blast)
-    // ================================================================
-
-    const LAYOUT_CFG = {
-        portrait: {
-            marginRatio: 0.025,
-            gapRatio: 0.018,
-            headerRatio: 0.075,
-            headerMinRatio: 0.05, headerMaxRatio: 0.10,
-        },
-        landscape: {
-            marginRatio: 0.035,
-            gapRatio: 0.03,
-            headerRatio: 0.12,
-            headerMinRatio: 0.06, headerMaxRatio: 0.14,
-        }
-    };
-
-    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
-
-    let safeInsetsCache = { top: 0, bottom: 0, left: 0, right: 0 };
-    (function measureSafeInsets() {
-        const probe = document.createElement('div');
-        probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;' +
-            'padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);' +
-            'padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);' +
-            'visibility:hidden;';
-        document.body.appendChild(probe);
-        const cs = getComputedStyle(probe);
-        safeInsetsCache = {
-            top: parseFloat(cs.paddingTop) || 0,
-            bottom: parseFloat(cs.paddingBottom) || 0,
-            left: parseFloat(cs.paddingLeft) || 0,
-            right: parseFloat(cs.paddingRight) || 0
-        };
-        probe.remove();
-    })();
-
-    function calcLayout() {
-        const insets = safeInsetsCache;
-        const availW = window.innerWidth - insets.left - insets.right;
-        const availH = window.innerHeight - insets.top - insets.bottom;
-        const isPortrait = availH >= availW;
-        const cfg = isPortrait ? LAYOUT_CFG.portrait : LAYOUT_CFG.landscape;
-
-        const margin = Math.round(availH * cfg.marginRatio);
-        const gap = Math.round(availH * cfg.gapRatio);
-        const headerH = Math.round(clamp(availH * cfg.headerRatio, availH * cfg.headerMinRatio, availH * cfg.headerMaxRatio));
-
-        const usableH = availH - margin * 2 - headerH - gap;
-        const usableW = availW - margin * 2;
-        const boardSize = Math.max(180, Math.floor(Math.min(usableH, usableW)));
-
-        return { margin, gap, headerH, boardSize };
-    }
-
-    function applyLayout() {
-        const L = calcLayout();
-        const root = document.documentElement;
-
-        root.style.setProperty('--margin', L.margin + 'px');
-        root.style.setProperty('--gap', L.gap + 'px');
-        root.style.setProperty('--header-h', L.headerH + 'px');
-        root.style.setProperty('--board-size', L.boardSize + 'px');
-
-        // Кнопки/иконки/шрифты — доля от высоты хедера
-        root.style.setProperty('--btn-size', Math.round(L.headerH * 0.68) + 'px');
-        root.style.setProperty('--icon-size', Math.round(L.headerH * 0.36) + 'px');
-        root.style.setProperty('--title-size', Math.round(L.headerH * 0.34) + 'px');
-        root.style.setProperty('--score-size', Math.round(L.headerH * 0.28) + 'px');
-
-        // Модальное окно — доля от размера доски
-        root.style.setProperty('--modal-padding', Math.round(L.boardSize * 0.08) + 'px');
-        root.style.setProperty('--modal-radius', Math.round(L.boardSize * 0.04) + 'px');
-        root.style.setProperty('--modal-title-size', Math.round(L.boardSize * 0.07) + 'px');
-        root.style.setProperty('--modal-text-size', Math.round(L.boardSize * 0.04) + 'px');
-        root.style.setProperty('--modal-btn-size', Math.round(L.boardSize * 0.045) + 'px');
-    }
-
-    applyLayout();
-
-    // Надёжный ресайз: ResizeObserver + fallback на resize/orientationchange
-    let layoutResizeTimeout;
-    function scheduleLayout() {
-        clearTimeout(layoutResizeTimeout);
-        layoutResizeTimeout = setTimeout(applyLayout, 30);
-    }
-    if (window.ResizeObserver) {
-        new ResizeObserver(scheduleLayout).observe(document.documentElement);
-    } else {
-        window.addEventListener('resize', scheduleLayout);
-        window.addEventListener('orientationchange', scheduleLayout);
-    }
-
     // --- АУДІО ДВИЖОК (Web Audio API) ---
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     let audioCtx;
@@ -518,8 +474,12 @@
 
     function showInterstitialAd() {
         let payload = { action: "showInterstitial" };
-        Unity.call(JSON.stringify(payload));
-    }
+        if (typeof Unity !== 'undefined' && typeof Unity.call === 'function') {
+            Unity.call(JSON.stringify(payload));
+        } else {
+            console.warn("Unity interface not available.");
+        }
+    }   
 
     function showRewardedAd() {
         let payload = { action: "showRewarded" };
@@ -764,7 +724,8 @@
         playSound('win');
         
         // Фирменный салют — масштабируется под размер доски
-        const boardSz = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--board-size')) || 400;
+        const boardEl = document.querySelector('.board-wrapper');
+        const boardSz = boardEl ? boardEl.getBoundingClientRect().width : 400;
         const colors = ['#EF476F', '#FFD166', '#06D6A0', '#118AB2'];
         confetti({
             particleCount: Math.round(boardSz * 0.35),

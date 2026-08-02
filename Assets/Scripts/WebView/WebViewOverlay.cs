@@ -1,19 +1,18 @@
 using Gree.UnityWebView;
+using System.Collections;
 using System.IO;
 using UnityEngine;
 
 [RequireComponent(typeof(JsMessageHandler))]
 public class WebViewOverlay : MonoBehaviour
 {
-    private WebViewObject webViewObject;
+    [SerializeField] private WebViewObject webViewObject;
     private JsMessageHandler messageHandler;
+    private bool isInitialized = false;
 
     private void Awake()
     {
-        // Получаем ссылку на наш новый обработчик
         messageHandler = GetComponent<JsMessageHandler>();
-
-        // Подписываемся на события из JS
         messageHandler.OnWin += HandleWin;
         messageHandler.OnClose += CloseWebView;
         messageHandler.OnShowInterstitial += ShowInterstitial;
@@ -22,7 +21,6 @@ public class WebViewOverlay : MonoBehaviour
 
     private void OnDestroy()
     {
-        // Отписываемся во избежание утечек памяти
         if (messageHandler != null)
         {
             messageHandler.OnWin -= HandleWin;
@@ -40,15 +38,13 @@ public class WebViewOverlay : MonoBehaviour
         }
     }
 
-    public void OpenGame(string gameFolder)
+    private void EnsureWebViewCreated()
     {
-        string gameUrl = GetGameUrl(gameFolder);
+        if (isInitialized) return;
 
-        webViewObject = (new GameObject("WebViewObject")).AddComponent<WebViewObject>();
         webViewObject.Init(
             cb: (msg) => {
                 Debug.Log($"Повідомлення від JS: {msg}");
-                // Передаем сырую строку в обработчик
                 messageHandler.ProcessMessage(msg);
             },
             err: (msg) => Debug.LogError($"Помилка WebView: {msg}"),
@@ -56,9 +52,30 @@ public class WebViewOverlay : MonoBehaviour
             hooked: (msg) => Debug.Log($"Hooked: {msg}")
         );
 
+        isInitialized = true;
+    }
+
+    public void OpenGame(string gameFolder)
+    {
+        EnsureWebViewCreated();
+
+        string gameUrl = GetGameUrl(gameFolder);
+
         webViewObject.SetMargins(0, 0, 0, 0);
         webViewObject.SetVisibility(true);
         webViewObject.LoadURL(gameUrl);
+
+        StartCoroutine(ForceRelayoutAfterDelay());
+    }
+
+    private IEnumerator ForceRelayoutAfterDelay()
+    {
+        yield return new WaitForSeconds(0.5f); // дать системным барам скрыться
+
+        // "Дёргаем" margins, чтобы форсировать реальный layout pass у Android WebView
+        webViewObject.SetMargins(0, 0, 0, 1);
+        yield return null;
+        webViewObject.SetMargins(0, 0, 0, 0);
     }
 
     private string GetGameUrl(string gameFolder)
@@ -79,18 +96,12 @@ public class WebViewOverlay : MonoBehaviour
         if (webViewObject != null)
         {
             webViewObject.SetVisibility(false);
-            Destroy(webViewObject.gameObject);
+            webViewObject.LoadURL("about:blank");
         }
     }
 
-    // --- Блок бизнес-логики (реакции на события) ---
-
     private void HandleWin(int points)
     {
-        int currentStars = PlayerPrefs.GetInt("StarsBalance", 0);
-        PlayerPrefs.SetInt("StarsBalance", currentStars + points);
-        PlayerPrefs.Save();
-
         Debug.Log($"Гравцю зараховано {points} зірочок!");
         CloseWebView();
     }
@@ -108,7 +119,6 @@ public class WebViewOverlay : MonoBehaviour
         });
     }
 
-    // Метод для отправки команд обратно в веб-часть
     public void SendDataToWebPage(string jsCommand)
     {
         if (webViewObject != null)
