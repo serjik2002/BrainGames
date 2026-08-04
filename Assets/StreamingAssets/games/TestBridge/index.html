@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>WebView Performance Test</title>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<style>
+  /* --- Reset & Base --- */
+  * {
+    box-sizing: border-box;
+  }
+  html, body {
+    background: #1a1a1a;
+    color: #fff;
+    font-family: system-ui, -apple-system, sans-serif;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* --- FPS Counter --- */
+  #fps-container {
+    background: #0d0d0d;
+    border-radius: 8px;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    border-left: 4px solid #4caf50;
+    flex-shrink: 0;
+  }
+  #fps-value {
+    font-weight: bold;
+    font-variant-numeric: tabular-nums;
+    color: #4caf50;
+  }
+  #fps-value.low {
+    color: #f44336;
+  }
+  #fps-value.medium {
+    color: #ff9800;
+  }
+
+  /* --- Buttons --- */
+  button {
+    display: block;
+    width: 100%;
+    padding: 16px 20px;
+    font-size: 18px;
+    margin: 0;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: filter 0.15s, transform 0.1s;
+    flex-shrink: 0;
+  }
+  button:active {
+    transform: scale(0.97);
+  }
+  button:hover {
+    filter: brightness(1.1);
+  }
+  #btnInterstitial { background: #d9534f; color: #fff; }
+  #btnPing { background: #337ab7; color: #fff; }
+  #btnClear { background: #444; color: #fff; }
+
+  /* --- Log --- */
+  #log {
+    white-space: pre-wrap;
+    font-size: 12px;
+    background: #0b0b0b;
+    padding: 12px;
+    margin: 0;
+    height: 240px;
+    overflow-y: auto;
+    border-radius: 6px;
+    border: 1px solid #2a2a2a;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    flex: 1;
+    min-height: 120px;
+  }
+  #log::-webkit-scrollbar {
+    width: 5px;
+  }
+  #log::-webkit-scrollbar-track {
+    background: #1a1a1a;
+  }
+  #log::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 4px;
+  }
+
+  /* --- ПОСТОЯННАЯ CSS АНИМАЦИЯ ДЛЯ НАГРУЗКИ --- */
+  .animation-container {
+    flex-shrink: 0;
+    height: 60px;
+    background: #121212;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    border: 1px solid #2c2c2c;
+    overflow: hidden;
+    padding: 0 16px;
+  }
+
+  /* Анимируемый элемент 1 — вращающийся квадрат */
+  .spinner {
+    width: 32px;
+    height: 32px;
+    background: #4caf50;
+    border-radius: 4px;
+    animation: spin 1.2s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg) scale(1); background: #4caf50; }
+    50% { transform: rotate(180deg) scale(1.2); background: #ff9800; border-radius: 50%; }
+    100% { transform: rotate(360deg) scale(1); background: #4caf50; }
+  }
+
+  /* Анимируемый элемент 2 — пульсирующий круг + тень */
+  .pulse {
+    width: 28px;
+    height: 28px;
+    background: #2196f3;
+    border-radius: 50%;
+    animation: pulse 1.8s ease-in-out infinite;
+    flex-shrink: 0;
+    box-shadow: 0 0 12px rgba(33, 150, 243, 0.3);
+  }
+  @keyframes pulse {
+    0% { transform: scale(0.9); opacity: 0.7; box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.4); }
+    50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 20px 8px rgba(33, 150, 243, 0.2); }
+    100% { transform: scale(0.9); opacity: 0.7; box-shadow: 0 0 0 0 rgba(33, 150, 243, 0); }
+  }
+
+  /* Анимируемый элемент 3 — бегущий градиент (тяжёлый для GPU) */
+  .gradient-runner {
+    height: 16px;
+    width: 80px;
+    border-radius: 20px;
+    background: linear-gradient(90deg, #f44336, #ffeb3b, #4caf50, #2196f3, #9c27b0, #f44336);
+    background-size: 300% 100%;
+    animation: gradientMove 2.4s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes gradientMove {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 300% 0%; }
+  }
+
+  /* небольшая подпись */
+  .anim-label {
+    font-size: 11px;
+    color: #888;
+    letter-spacing: 0.3px;
+    margin-right: 4px;
+  }
+
+  /* --- адаптив --- */
+  @media (max-width: 480px) {
+    .animation-container {
+      gap: 12px;
+      flex-wrap: wrap;
+      height: auto;
+      padding: 12px;
+    }
+    .gradient-runner {
+      width: 60px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- FPS счётчик -->
+<div id="fps-container">
+  <span>⚡ Частота кадров (FPS)</span>
+  <span id="fps-value">--</span>
+</div>
+
+<!-- Кнопки -->
+<button id="btnInterstitial" onclick="testInterstitial()">📺 Show Interstitial</button>
+<button id="btnPing" onclick="testBridgePing()">📡 Bridge Ping (log only)</button>
+<button id="btnConfetti" onclick="testConfetti()">🎉 Test Confetti</button>
+<button id="btnConfettiToggle" onclick="testConfettiWithToggle()">🎉🔄 Confetti + Visibility Toggle</button>
+<button id="btnClear" onclick="clearLog()">🗑️ Clear Log</button>
+
+<!-- ПОСТОЯННАЯ CSS АНИМАЦИЯ -->
+<div class="animation-container">
+  <span class="anim-label">CSS анимация</span>
+  <div class="spinner" title="Вращение + масштаб"></div>
+  <div class="pulse" title="Пульсация + тень"></div>
+  <div class="gradient-runner" title="Бегущий градиент"></div>
+</div>
+
+<!-- Лог -->
+<div id="log"></div>
+
+<script>
+  // ======================== FPS METER ========================
+  (function initFpsCounter() {
+    const fpsElement = document.getElementById('fps-value');
+    let frameCount = 0;
+    let lastTime = performance.now();
+
+    function updateFps() {
+      const now = performance.now();
+      const delta = now - lastTime;
+
+      if (delta >= 1000) {
+        const fps = Math.round((frameCount * 1000) / delta);
+        fpsElement.textContent = fps + ' FPS';
+
+        // цветовая индикация
+        fpsElement.classList.remove('low', 'medium');
+        if (fps < 30) fpsElement.classList.add('low');
+        else if (fps < 55) fpsElement.classList.add('medium');
+
+        frameCount = 0;
+        lastTime = now;
+      }
+      frameCount++;
+      requestAnimationFrame(updateFps);
+    }
+
+    // Запускаем измерение
+    requestAnimationFrame(updateFps);
+  })();
+
+  // ======================== ОСНОВНАЯ ЛОГИКА ========================
+  let pingCounter = 0;
+
+  function log(msg) {
+    const el = document.getElementById('log');
+    const time = new Date().toISOString().substr(11, 12);
+    el.textContent = `[${time}] ${msg}\n` + el.textContent;
+    // ограничим лог, чтобы не тормозить
+    if (el.textContent.length > 8000) {
+      el.textContent = el.textContent.slice(0, 6000) + '… (обрезано)\n';
+    }
+  }
+
+  function clearLog() {
+    document.getElementById('log').textContent = '';
+  }
+
+  function callBridge(payload) {
+    try {
+      Unity.call(JSON.stringify(payload));
+      return true;
+    } catch (e) {
+      log('💥 EXCEPTION: ' + e.message);
+      return false;
+    }
+  }
+
+  // Кнопка 1: Interstitial
+  function testInterstitial() {
+    log('📢 Interstitial: button clicked, calling bridge...');
+    const ok = callBridge({ action: "showInterstitial" });
+    if (ok) log('✅ Interstitial: bridge call sent');
+  }
+
+  // Кнопка 2: Ping
+  function testBridgePing() {
+    pingCounter++;
+    const msg = 'Ping #' + pingCounter + ' from WebView at ' + new Date().toISOString();
+    log('📡 Ping: sending "' + msg + '"');
+    const ok = callBridge({ action: "log", message: msg });
+    if (ok) log('✅ Ping: bridge call sent');
+  }
+
+  // Кнопка 3: Confetti
+  function testConfetti() {
+    log('🎉 Confetti: firing!');
+    confetti({
+      particleCount: 150,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#EF476F', '#FFD166', '#06D6A0', '#118AB2', '#9D4EDD']
+    });
+    log('✅ Confetti: done');
+  }
+
+  // Кнопка 4: Confetti + Visibility Toggle
+  function testConfettiWithToggle() {
+    log('🎉🔄 Confetti + Toggle: starting...');
+    confetti({
+      particleCount: 150,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#EF476F', '#FFD166', '#06D6A0', '#118AB2', '#9D4EDD']
+    });
+    log('🎉 Confetti fired, now toggling visibility false → true');
+    callBridge({ action: "hideWebView" });
+    setTimeout(() => {
+      log('🔄 Restoring visibility after 300ms');
+      callBridge({ action: "showWebView" });
+    }, 50);
+  }
+
+  // Колбэки из Unity
+  function onAdSkipped(type) {
+    log('🎯 onAdSkipped called: ' + type);
+  }
+  function onAdClosed() {
+    log('🚪 onAdClosed called');
+  }
+  function onPingAck(msg) {
+    log('🔄 onPingAck called: ' + msg);
+  }
+
+  // Отслеживание видимости WebView
+  document.addEventListener('visibilitychange', () => {
+    log('👁️ visibilitychange: ' + document.visibilityState);
+  });
+
+  log('✅ Performance test page loaded with CSS animation & FPS counter');
+</script>
+</body>
+</html>
