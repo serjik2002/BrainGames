@@ -141,17 +141,26 @@
         .header-right { display: flex; align-items: center; gap: 6px; }
 
         /* Обёртка */
+        .middle-wrapper {
+            flex: 1;
+            display: grid;
+            grid-template-rows: 1fr auto 1fr;
+            gap: var(--gap);
+        }
+
         .board-col {
             display: flex; flex-direction: column; align-items: stretch;
             gap: calc(var(--board-size) * 0.0256);
-            align-self: center;
-            flex: 1 1 auto; justify-content: center;
+            width: var(--board-size);
+            justify-self: center;
         }
 
         /* Список слов */
         .word-list {
-            width: 100%;
+            width: var(--board-size);
+            justify-self: center;
             display: flex; flex-wrap: wrap; justify-content: center;
+            align-content: flex-start;
             gap: calc(var(--board-size) * 0.015);
         }
 
@@ -294,6 +303,7 @@
         </div>
 
         <!-- Список слов — между хедером и полем -->
+        <div class="middle-wrapper">
         <div class="word-list" id="wordList"></div>
 
         <div class="board-col">
@@ -313,7 +323,7 @@
                 </div>
             </div>
 
-            
+
 
             <div class="board" id="board"></div>
 
@@ -323,6 +333,7 @@
                 </button>
             </div>
 
+        </div>
         </div>
     </div>
 
@@ -388,17 +399,16 @@
         }
 
         function resetStats() {
-            stopTimer(); timerSec = 0; updateTimeDisplay(); updateWordsDisplay();
+            stopTimer(); timerSec = 0; foundWordsCount = 0; updateTimeDisplay(); updateWordsDisplay();
+            foundWordColors = {}; colorIndex = 0;
         }
 
         loadBest();
 
         // --- Game Configuration & State ---
-        const BOARD_SIZE = 10;
+        const BOARD_SIZE = 8;
         const ALL_WORDS = [
-            "HTML", "CSS", "REACT", "MOBILE", "MATRIX", 
-            "SEARCH", "GAME", "CODE", "WEB", "PHONE", 
-            "STYLE", "LOGIC", "PIXEL", "GRID", "ARRAY"
+            "abs","ace","act","age","aid","aim","air","ant","ape","app","ark","arm","art","ash","awe","axe","bag","ban","bar","bat","bay","bed","bee","bet","bib","bim","bin","boa","bot","bow","box","boy","bud","bug","bun","bus","cab","can","cap","car","cat","cob","cod","cop","cot","cow","cry","cub","cue","cup","cut","dad","dam","day","den","dew","die","dig","dip","doe","dog","dot","due","duo","dye","ear","ebb","eel","egg","ego","elf","elk","elm","emu","end","era","eve","eye","fan","fat","fee","fig","fin","fit","fix","flu","fly","foe","fog","fox","fry","fug","fun","fur","gap","gas","gel","gem","gig","god","gum","gun","gut","guy","gym","ham","hat","hay","hen","hex","hip","hit","hod","hoe","hog","hub","hue","hug","hut","ice","imp","ink","inn","ion","ivy","jam","jar","jaw","jet","job","jog","joy","jug","key","kid","kin","kit","lad","lag","lap","law","leg","lid","lie","lip","log","man","map","mat","may","men","mix","mom","mop","mow","mud","mug","nap","net","nod","nun","nut","oak","oar","oat","ode","oil","orb","ore","owl","pan","paw","pay","pea","pen","pet","pie","pig","pin","pit","pod","pot","pug","pup","rag","ram","rap","rat","ray","red","rib","rim","roe","row","rub","rug","run","sac","saw","sea","set","sin","sip","sir","ski","sky","sob","son","spa","spy","sum","sun","tab","tag","tan","tap","tar","tax","tea","tic","tie","tin","tip","toe","ton","top","toy","try","tub","tug","urn","use","van","vat","vet","vow","war","wax","way","web","wig","win","wit","woe","yam","yen","zen","zoo","buy","acid","acre","aide","ally","arch","area","aria","army","atom","aunt","axle","baby","bait","ball","band","bank","bark","barn","base","bath","bead","beak","beam","bean","bear","beat","beef","bell","belt","bike","bill","bird","bite","blog","blur","boat","body","bone","book","boot","boss","bowl","brow","bulb","bull","bush","cafe","cage","cake","calf","call","camp","cane","cape","card","care","cart","case","cash","cast","cave","cell","chat","chef","chin","chip","city","clam","claw","clay","club","clue","coal","coat","code","coin","cold","comb","cook","cord","core","corn","cost","coup","crab","crew","crop","cure","dame","dare","data","date","dawn","deal","dean","debt","deck","deed","deer","desk","dial","dice","diet","dirt","dish","disk","dock","doll","doom","door","dose","drop","drum","duck","duke","dusk","dust","duty","earl","ease","east","echo","edge","envy","epic","euro","evil","exam","exit","face","fact","fail","fair","fake","fall","fame","farm","fate","fear","feat","feed","fern","fest","file","film","fine","fire","fish","fist","flag","flea","flow","food","foot","fork","form","fort","frog","fuel","fund","fury","gain","game","gasp","gate","gaze","gear","gene","gest","gift","girl","glow","glue","goat","gold","golf","gong","gown","grid","grin","grip","gulf","hair","hall","hand","hare","harp","hate","hawk","haze","head","heat","heel","help","herb","herd","hero","hill","hint","hiss","hive","hold","hole","home","hook","hoop","hope","horn","hose","hour","hype","icon","idea","idol","inch","iris","iron","isle","item","jack","jade","jail","jazz","jeep","jerk","jinx","joke","judo","jump","jury","kale","keep","kick","kilt","kind","king","kiss","kite","kiwi","knee","knob","knot","lace","lady","lair","lake","lamb","lamp","land","lane","lark","leaf","leak","leek","lens","life","limb","lime","line","link","lion","list","load","loaf","loan","lock","look","loop","loss","love","luck","lung","lynx","mail","male","mall","mare","mark","mask","mate","maze","meal","meat","menu","mess","mile","milk","mill","mind","mine","mint","miss","mist","mole","mood","moon","moss","moth","move","mule","muse","myth","nail","name","nape","navy","neck","need","nest","news","nook","noon","norm","nose","note","noun","oath","obey","oboe","opal","orca","oval","oven","pace","pack","page","pail","pain","pair","palm","park","part","pass","past","path","peak","pear","peer","pest","pile","pill","pine","pipe","pity","plan","play","plot","poem","pond","pony","pool","pork","post","prey","quay","quiz","race","rage","rail","rain","rake","rank","rash","rate","reef","rent","rest","rice","ride","ring","road","robe","rock","role","roll","roof","room","root","rope","rose","ruin","rule","rune","rush","sack","safe","sail","sale","salt","sand","scar","seal","seat","seed","shin","ship","shoe","shop","shot","show","side","sign","silk","silo","sink","site","size","skin","snow","soap","sock","sofa","song","soul","spam","spot","star","step","stew","stop","suit","swan","tact","tail","tale","talk","tank","tart","task","taxi","team","tear","tent","term","test","text","tick","tile","time","tone","tool","town","trap","tray","tree","trip","tube","turn","type","unit","urge","user","vale","vase","veil","vein","vent","verb","vest","vibe","view","vine","visa","void","volt","vote","wale","walk","wall","wand","ware","wave","weed","week","well","west","whip","wife","will","wind","wing","wink","wire","wish","wolf","wood","wool","word","work","worm","wrap","yard","yarn","yawn","year","yelp","yoga","yolk","yurt","zeal","zero","zest","zinc","zone","zoom","actor","adult","agent","aisle","alarm","album","alien","alley","amber","angel","anger","angle","ankle","apple","apron","arena","aroma","array","arrow","asset","atlas","attic","audit","award","bacon","baker","basil","basis","batch","beach","beard","beast","belly","bench","berry","birth","blade","blame","blank","blast","blend","bliss","block","blood","bloom","bluff","board","bonus","booth","brain","brake","brand","bread","break","breed","brick","bride","brink","broom","brush","bunny","cabin","cable","camel","candy","cargo","cause","chain","chair","chalk","chaos","charm","chart","chase","check","cheek","chess","chest","chief","child","choir","chord","claim","clash","class","clerk","cliff","cloak","clock","clone","cloud","clove","clown","coach","coast","cocoa","comet","couch","cough","court","cover","crack","craft","crash","cream","crime","crowd","crown","crush","crust","curry","curve","cycle","dairy","daisy","dance","decay","decor","delay","depth","devil","diary","digit","diner","disco","ditch","donut","doubt","dough","dozen","draft","drain","drama","dream","dress","drift","drone","eagle","earth","elbow","ember","enemy","entry","envoy","error","essay","ethic","event","exile","faith","fault","feast","fence","fever","field","fight","flame","flask","flock","flood","floor","flour","fluid","focus","force","forum","frame","fraud","front","frost","frown","fruit","gamer","ghost","giant","glare","glass","glaze","globe","gloom","glory","gloss","glove","goose","grace","grade","grain","grant","grasp","grass","greed","grief","grill","groom","group","grove","guard","guess","guest","guide","guilt","habit","haste","havoc","heart","hobby","honey","honor","horse","hotel","house","human","humor","icing","idiom","image","index","irony","issue","jelly","jewel","joint","judge","juice","kiosk","knife","knock","koala","label","ladle","laser","laugh","layer","leave","lemon","level","lever","light","limit","linen","liver","lobby","lodge","logic","lorry","lotus","lover","lunch","magic","mango","manor","maple","march","match","medal","melon","mercy","metal","model","money","month","motor","mount","mouse","mouth","mummy","music","nerve","niece","night","ninja","noise","north","novel","nurse","oasis","ocean","offer","olive","onion","opera","orbit","order","otter","ounce","owner","paint","panel","panic","paper","party","patch","pause","peace","peach","pearl","peril","petal","phase","phone","photo","piano","piece","pilot","pitch","pizza","place","plain","plane","plank","plant","plate","point","porch","pouch","pound","power","press","price","pride","print","prize","proof","pulse","pupil","purse","queen","quest","queue","quota","quote","radar","radio","raise","ranch","range","ratio","raven","razor","reach","rebel","reign","relic","reply","rhino","rhyme","rival","river","robot","route","ruler","salad","sauce","scale","scarf","scene","scent","scope","score","scout","screw","sense","shade","shaft","shame","shape","shark","sheep","sheet","shelf","shell","shift","shirt","shock","shore","shout","shrub","sight","siren","skill","skirt","skull","slang","sleep","slice","slope","smell","smile","smith","smoke","snack","snail","snake","snore","sound","south","space","spade","spark","speed","spell","spice","spine","split","spoon","sport","spray","squad","stack","staff","stage","stain","stake","stamp","stand","stare","start","state","steam","steel","stick","stock","stone","store","storm","story","straw","study","stuff","stunt","style","sugar","suite","swamp","sweat","swing","sword","syrup","table","taste","theme","thigh","thing","thorn","thumb","tiger","title","toast","tonic","tooth","topic","torch","total","touch","tower","trace","track","tract","trade","trail","train","treat","trend","trial","trick","trout","truck","trunk","trust","truth","tulip","tutor","twist","uncle","union","unity","value","valve","vault","venom","venue","video","villa","visit","vista","voice","voter","vowel","wagon","waist","waste","watch","water","whale","wheat","wheel","widow","witch","woman","world","worry","wound","wrist","yacht","yield","youth","zebra","abduct","accent","access","accord","action","adverb","advice","affair","agency","agenda","alcove","almond","ambush","anchor","animal","answer","anthem","appeal","archer","armour","arrest","artist","aspect","asylum","attack","author","autumn","avenue","bakery","ballet","ballot","bamboo","banana","banner","barrel","basket","battle","beacon","beauty","beaver","beetle","belief","bellow","binder","bishop","bistro","blouse","blower","bonnet","border","bottle","bottom","branch","breath","breeze","bridge","broker","bubble","bucket","budget","buffet","bullet","bundle","bunker","burden","bureau","burger","butler","butter","button","cactus","camera","campus","canary","candle","canyon","carbon","career","carpet","carrot","castle","cattle","cavity","celery","cellar","cement","census","center","chance","change","chapel","charge","cheese","cherry","choice","church","cinema","circle","circus","clause","client","clinic","closet","clover","coffee","collar","colony","column","copper","corner","cotton","county","couple","courier","course","cousin","coward","cradle","crater","credit","crisis","critic","cruise","curfew","cursor","custom","cutter","damage","dancer","danger","debate","decade","defeat","defect","degree","demand","denial","deputy","desert","design","desire","detail","device","diesel","dinner","doctor","dollar","domain","donkey","dragon","drawer","driver","editor","effect","effort","empire","energy","engine","enigma","entity","escape","estate","esteem","ethics","excuse","expert","export","extent","fabric","facade","factor","falcon","family","farmer","father","faucet","felony","female","figure","finger","finish","fisher","flight","flower","folder","forest","format","fossil","fridge","friend","fringe","fungus","future","galaxy","garage","garden","garlic","gender","genius","glance","goblet","gospel","gossip","gravel","ground","growth","guinea","guitar","hammer","handle","harbor","hazard","health","hearth","heater","height","helmet","herder","hockey","holder","honour","hopper","horror","hostel","humour","hunger","hunter","hybrid","impact","import","income","infant","injury","insect","intent","island","jacket","jaguar","jersey","jockey","jungle","keeper","kettle","kidney","kitten","knight","ladder","lagoon","launch","laurel","lawyer","leader","league","legacy","legend","legion","length","lesson","letter","lizard","locker","lotion","lumber","luxury","magnet","mammal","mantle","marble","marina","market","master","matrix","matter","meadow","medium","melody","member","memory","menace","method","middle","minute","mirror","misery","mobile","moment","monkey","morale","mosaic","mother","motion","motive","muscle","museum","napkin","nation","native","nature","nausea","needle","nephew","nickel","notice","notion","nugget","number","object","office","option","orange","orchid","outfit","outlet","oxygen","oyster","packet","palace","pantry","parade","parcel","parent","parrot","pastor","pastry","patent","patrol","peanut","pencil","people","pepper","period","permit","person","phrase","picnic","pigeon","pillow","pirate","plague","planet","player","pocket","poetry","poison","police","policy","polish","pollen","portal","porter","poster","potato","powder","praise","prayer","prince","prison","profit","prompt","puppet","puzzle","quarry","quartz","quiver","rabbit","racket","radius","ranger","ransom","reader","reason","rebate","recipe","record","rector","reflex","reform","refuge","refund","region","relief","remark","remedy","repair","repeat","report","rescue","resort","result","review","reward","ribbon","riddle","ritual","rocket","rodent","router","rubber","rumour","saddle","safari","safety","sailor","salary","saliva","salmon","salute","sample","scheme","school","scream","screen","script","search","season","secret","sector","server","shadow","shield","shower","shrimp","shrine","signal","silver","singer","sister","sketch","sleeve","socket","source","speech","sphere","spider","spirit","splash","sponge","spouse","spring","sprint","square","stance","statue","status","strain","stream","street","stress","string","studio","suburb","summer","summit","supper","supply","survey","switch","symbol","system","tablet","tailor","talent","tanker","target","temper","temple","tenant","theory","threat","throat","throne","ticket","timber","tissue","tomato","tongue","trader","treaty","trench","trophy","tunnel","turkey","turtle","tycoon","update","valley","vanity","vector","vendor","vessel","victim","viewer","viking","violin","vision","volume","voyage","waiter","wallet","walnut","warmth","wealth","weasel","weight","widget","willow","window","winner","winter","wisdom","wizard","wonder","worker","writer","yogurt","zenith"
         ];
         const WORDS_PER_GAME = 6;
         
@@ -410,6 +420,10 @@
         let startCell = null;
         let selectedPath = [];
 
+        const FOUND_COLORS = ['#06D6A0', '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFD93D', '#C084FC', '#FB923C', '#A78BFA'];
+        let foundWordColors = {};
+        let colorIndex = 0;
+
         const boardEl = document.getElementById('board');
         const wordListEl = document.getElementById('wordList');
         const winScreen = document.getElementById('winScreen');
@@ -417,7 +431,7 @@
         function generateGrid() {
             // Pick random words
             let shuffled = [...ALL_WORDS].sort(() => 0.5 - Math.random());
-            wordsToFind = shuffled.slice(0, WORDS_PER_GAME);
+            wordsToFind = shuffled.slice(0, WORDS_PER_GAME).map(w => w.toUpperCase());
             
             // Initialize empty grid
             grid = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(''));
@@ -465,7 +479,7 @@
             let y = startY;
             for (let i = 0; i < word.length; i++) {
                 if (x < 0 || x >= BOARD_SIZE || y < 0 || y >= BOARD_SIZE) return false;
-                if (grid[y][x] !== '' && grid[y][x] !== word[i]) return false;
+                if (grid[y][x] !== '') return false;
                 x += dx;
                 y += dy;
             }
@@ -482,7 +496,19 @@
             }
         }
 
-        function renderUI() {
+        function renderUI(preserveState = true) {
+            // Save found state before destroying DOM (only on resize, not new game)
+            const foundWordSet = new Set();
+            const foundCells = new Map();
+            if (preserveState) {
+                document.querySelectorAll('.word-item.found').forEach(el => {
+                    foundWordSet.add(el.textContent);
+                });
+                document.querySelectorAll('.tile.found').forEach(el => {
+                    foundCells.set(`${el.dataset.r},${el.dataset.c}`, el.style.backgroundColor);
+                });
+            }
+
             const boardW = boardEl.clientWidth;
             const cs = getComputedStyle(boardEl);
             const padPx = parseFloat(cs.paddingLeft) || (boardW * 0.015);
@@ -521,8 +547,21 @@
                 wordListEl.appendChild(el);
             });
 
+            // Restore found state
+            foundWordSet.forEach(word => {
+                const el = document.getElementById(`word-${word}`);
+                if (el) el.classList.add('found');
+            });
+            foundCells.forEach((color, key) => {
+                const [r, c] = key.split(',');
+                const el = document.querySelector(`.tile[data-r="${r}"][data-c="${c}"]`);
+                if (el) {
+                    el.classList.add('found');
+                    el.style.backgroundColor = color;
+                }
+            });
+
             winScreen.classList.remove('active');
-            foundWordsCount = 0;
         }
 
         function getCellFromEvent(e) {
@@ -612,13 +651,19 @@
             else if (wordsToFind.includes(reversedWord)) matchedWord = reversedWord;
 
             if (matchedWord) {
-                startTimer();
                 const wordItem = document.getElementById(`word-${matchedWord}`);
                 if (wordItem && !wordItem.classList.contains('found')) {
                     wordItem.classList.add('found');
 
+                    if (!foundWordColors[matchedWord]) {
+                        foundWordColors[matchedWord] = FOUND_COLORS[colorIndex % FOUND_COLORS.length];
+                        colorIndex++;
+                    }
+                    const color = foundWordColors[matchedWord];
+
                     selectedPath.forEach(node => {
                         node.el.classList.add('found');
+                        node.el.style.backgroundColor = color;
                     });
 
                     foundWordsCount++;
@@ -651,7 +696,9 @@
         function initGame() {
             resetStats();
             generateGrid();
-            renderUI();
+            renderUI(false);
+            updateWordsDisplay();
+            startTimer();
         }
 
         // New game button

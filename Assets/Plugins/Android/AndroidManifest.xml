@@ -1,46 +1,30 @@
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
-	<uses-permission android:name="com.android.vending.BILLING" />
-	<!-- Эти строки принудительно вырежут разрешения на фото и видео при сборке -->
-	<uses-permission tools:node="remove" android:name="android.permission.READ_MEDIA_IMAGES" />
-	<uses-permission tools:node="remove" android:name="android.permission.READ_MEDIA_VIDEO" />
-	<uses-permission android:name="android.permission.INTERNET" />
-	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-	<uses-feature android:glEsVersion="0x00030000" />
-	<uses-feature android:name="android.hardware.vulkan.version" android:required="false" />
-	<uses-feature android:name="android.hardware.touchscreen" android:required="false" />
-	<uses-feature android:name="android.hardware.touchscreen.multitouch" android:required="false" />
-	<uses-feature android:name="android.hardware.touchscreen.multitouch.distinct" android:required="false" />
-	<application android:appCategory="game" android:enableOnBackInvokedCallback="false" android:extractNativeLibs="true">
-		<meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-8968740975401720~2150243505" />
-		<meta-data tools:replace="android:value" android:name="com.google.android.play.billingclient.version" android:value="8.3.0" />
-		<meta-data android:name="unity.splash-mode" android:value="0" />
-		<meta-data android:name="unity.splash-enable" android:value="True" />
-		<meta-data android:name="unity.launch-fullscreen" android:value="True" />
-		<meta-data android:name="unity.render-outside-safearea" android:value="True" />
-		<meta-data android:name="notch.config" android:value="portrait|landscape" />
-		<meta-data android:name="unity.auto-report-fully-drawn" android:value="true" />
-		<meta-data android:name="unity.strip-engine-code" android:value="true" />
-		<meta-data android:name="unity.auto-set-game-state" android:value="true" />
-		<activity android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale|layoutDirection|density" android:enabled="false" android:exported="true" android:hardwareAccelerated="false" android:launchMode="singleTask" android:name="com.unity3d.player.UnityPlayerActivity" android:resizeableActivity="true" android:screenOrientation="userPortrait" android:theme="@style/UnityThemeSelector" android:windowSoftInputMode="adjustPan">
-			<intent-filter>
-				<category android:name="android.intent.category.LAUNCHER" />
-				<action android:name="android.intent.action.MAIN" />
-			</intent-filter>
-			<meta-data android:name="unityplayer.UnityActivity" android:value="true" />
-			<meta-data android:name="WindowManagerPreference:FreeformWindowSize" android:value="@string/FreeformWindowSize_maximize" />
-			<meta-data android:name="WindowManagerPreference:FreeformWindowOrientation" android:value="@string/FreeformWindowOrientation_portrait" />
-			<layout android:minHeight="300px" android:minWidth="400px" />
-		</activity>
-		<provider android:name="androidx.core.content.FileProvider" android:authorities="com.uniteditforce.braingames.unitywebview.fileprovider" android:exported="false" android:grantUriPermissions="true">
-			<meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/unitywebview_file_provider_paths" />
-		</provider>
-		<meta-data android:name="com.google.unity.ads.UNITY_VERSION" android:value="6000.2.8f1" />
-	</application>
-	<uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
-	<queries>
-		<intent>
-			<action android:name="android.media.action.GET_CONTENT" />
-		</intent>
-	</queries>
+﻿<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" package="com.uniteditforce.braingames">
+  <!-- Разрешения -->
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <uses-permission android:name="com.android.vending.BILLING" />
+  <!-- Для Android 13+ (оставляем, не удаляем!) -->
+  <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+  <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+  <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+  <application>
+    <!-- AdMob -->
+    <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-8968740975401720~2150243505" />
+    <!-- Google Play Billing -->
+    <meta-data android:name="com.google.android.play.billingclient.version" android:value="8.3.0" tools:replace="android:value" />
+    <!-- ГЛАВНАЯ АКТИВНОСТЬ С АППАРАТНЫМ УСКОРЕНИЕМ -->
+    <activity android:name="com.unity3d.player.UnityPlayerGameActivity" android:hardwareAccelerated="false" android:theme="@style/BaseUnityGameActivityTheme" android:configChanges="orientation|screenSize|keyboardHidden" android:launchMode="singleTask" android:screenOrientation="userPortrait" android:windowSoftInputMode="adjustPan">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+      <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
+      <meta-data android:name="android.app.lib_name" android:value="game" />
+    </activity>
+    <!-- FileProvider для WebView (если используете unity-webview) -->
+    <provider android:name="androidx.core.content.FileProvider" android:authorities="com.uniteditforce.braingames.unitywebview.fileprovider" android:exported="false" android:grantUriPermissions="true">
+      <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/unitywebview_file_provider_paths" />
+    </provider>
+  </application>
 </manifest>

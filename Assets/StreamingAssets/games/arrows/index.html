@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Arrows - Brain Games</title>
     <!-- Підключення confetti для салюту -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script> -->
+     <script src="https://cdn.jsdelivr.net/npm/@tsparticles/preset-confetti@3/tsparticles.preset.confetti.bundle.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap');
 
@@ -376,6 +377,27 @@
             transform: translateY(4px);
             box-shadow: 0 2px 0 rgba(0,0,0,0.15);
         }
+
+        .confetti-piece {
+    position: fixed;
+    width: 10px;
+    height: 16px;
+    pointer-events: none;
+    z-index: 9999;
+    animation: confetti-fall 1.2s ease-out forwards;
+}
+
+@keyframes confetti-fall {
+    0% {
+        transform: translate(0, 0) rotate(0deg);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(var(--x), var(--y)) rotate(720deg);
+        opacity: 0;
+    }
+}
     </style>
 </head>
 <body>
@@ -727,12 +749,24 @@
         const boardEl = document.querySelector('.board-wrapper');
         const boardSz = boardEl ? boardEl.getBoundingClientRect().width : 400;
         const colors = ['#EF476F', '#FFD166', '#06D6A0', '#118AB2'];
-        confetti({
-            particleCount: Math.round(boardSz * 0.35),
-            spread: Math.round(boardSz * 0.18),
-            origin: { y: 0.6 },
-            colors: colors
+        tsParticles.load({
+        id: "tsparticles",
+        options: {
+            preset: "confetti",
+            pauseOnStart: true, // Анімація не запуститься одразу
+            particles: {
+            color: {
+                value: ["#ff0000", "#00ff00", "#0000ff"]
+            }
+            }
+        },
+        }).then((container) => {
+        // Зберігаємо контейнер у глобальну змінну
+        window.confettiContainer = container;
         });
+        if (window.confettiContainer) {
+            window.confettiContainer.play(); // Запускаємо
+        }
 
         // Показуємо модальне вікно
         showInterstitialAd();
