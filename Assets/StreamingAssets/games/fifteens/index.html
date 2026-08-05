@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Fifteen - Brain Games</title>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         /* ================================================================
            CSS-only адаптивная вёрстка: clamp / dvh / aspect-ratio / cqw
@@ -25,6 +24,7 @@
             --margin: clamp(8px, 2.5vh, 24px);
             --gap: clamp(4px, 1.8vh, 16px);
             --header-h: clamp(32px, 7.5vh, 64px);
+            --score-row-h: clamp(44px, 9vh, 64px);
 
             /* Производные от шапки */
             --btn-size: calc(var(--header-h) * 0.68);
@@ -44,6 +44,7 @@
                 --margin: clamp(8px, 2.5dvh, 24px);
                 --gap: clamp(4px, 1.8dvh, 16px);
                 --header-h: clamp(32px, 7.5dvh, 64px);
+                --score-row-h: clamp(44px, 9dvh, 64px);
                 --modal-padding: clamp(10px, 3dvh, 28px);
                 --modal-radius: clamp(8px, 2dvh, 18px);
                 --modal-title-size: clamp(16px, 3dvh, 32px);
@@ -57,6 +58,7 @@
                 --margin: clamp(12px, 3.5vh, 32px);
                 --gap: clamp(6px, 3vh, 20px);
                 --header-h: clamp(40px, 12vh, 80px);
+                --score-row-h: clamp(36px, 9vh, 52px);
             }
         }
 
@@ -66,6 +68,7 @@
                     --margin: clamp(12px, 3.5dvh, 32px);
                     --gap: clamp(6px, 3dvh, 20px);
                     --header-h: clamp(40px, 12dvh, 80px);
+                    --score-row-h: clamp(36px, 9dvh, 52px);
                 }
             }
         }
@@ -204,16 +207,73 @@
             min-height: 0;
         }
 
-        /* Обёртка: доска + кнопка restart, выровнены по левому краю */
+        /* Обёртка: доска + плашки + кнопка, выровнены по левому краю */
         .board-col {
+            --avail-h: calc(100vh - var(--header-h) - var(--score-row-h) - var(--gap) - var(--gap) - 2 * var(--margin)
+                - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            --max-w: calc(100vw - 2 * var(--margin)
+                - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+            --board-size: min(var(--max-w), calc(var(--avail-h) * 0.85));
             display: flex;
             flex-direction: column;
             align-items: flex-start;
-            gap: var(--gap);
+            gap: calc(var(--board-size) * 0.0256);
+        }
+
+        @supports (height: 100dvh) {
+            .board-col {
+                --avail-h: calc(100dvh - var(--header-h) - var(--score-row-h) - var(--gap) - var(--gap) - 2 * var(--margin)
+                    - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            }
+        }
+
+        @supports (width: 100dvw) {
+            .board-col {
+                --max-w: calc(100dvw - 2 * var(--margin)
+                    - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+            }
+        }
+
+        /* Плашки MOVES / BEST */
+        .score-row {
+            width: 100%;
+            display: flex;
+            gap: calc(var(--board-size) * 0.0256);
+        }
+
+        .score-box {
+            flex: 1 1 50%;
+            background-color: var(--board-bg);
+            border-radius: calc(var(--board-size) * 0.02);
+            padding: 0 clamp(8px, 2vw, 16px);
+            height: calc(var(--board-size) * 0.15);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 4px 12px var(--btn-shadow);
+            transition: background-color 0.3s;
+        }
+
+        .score-label {
+            display: block;
+            font-size: clamp(1px, calc(var(--board-size) * 0.032), 13px);
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .score-value {
+            display: block;
+            font-size: clamp(1px, calc(var(--board-size) * 0.05), 20px);
+            font-weight: 600;
+            color: var(--text-color);
+            line-height: 1;
         }
 
         .board-wrapper {
-            --avail-h: calc(100vh - var(--header-h) - var(--gap) * 2 - 2 * var(--margin)
+            --avail-h: calc(100vh - var(--header-h) - var(--score-row-h) - var(--gap) - var(--gap) - 2 * var(--margin)
                 - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
             --max-w: calc(100vw - 2 * var(--margin)
                 - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
@@ -222,15 +282,15 @@
             flex: 0 0 auto;
             container-type: size;
             background: var(--board-bg);
-            border-radius: 5cqw;
-            padding: 2.5cqw;
+            border-radius: 2cqw;
+            padding: 1cqw;
             box-shadow: inset 0 6px 15px rgba(0,0,0,0.1);
             position: relative;
         }
 
         @supports (height: 100dvh) {
             .board-wrapper {
-                --avail-h: calc(100dvh - var(--header-h) - var(--gap) * 2 - 2 * var(--margin)
+                --avail-h: calc(100dvh - var(--header-h) - var(--score-row-h) - var(--gap) - var(--gap) - 2 * var(--margin)
                     - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
             }
         }
@@ -243,9 +303,9 @@
         }
 
         .restart-btn {
-            width: var(--btn-size);
-            height: var(--btn-size);
-            border-radius: 50%;
+            width: calc(var(--board-size) * 0.1);
+            height: calc(var(--board-size) * 0.1);
+            border-radius: calc(var(--board-size) * 0.02);
             background-color: var(--btn-bg);
             box-shadow: 0 4px 12px var(--btn-shadow);
             display: flex;
@@ -260,7 +320,10 @@
         }
 
         .restart-btn:active { transform: scale(0.9); }
-        .restart-btn svg { width: var(--icon-size); height: var(--icon-size); }
+        .restart-btn svg {
+            width: calc(var(--board-size) * 0.05);
+            height: calc(var(--board-size) * 0.05);
+        }
 
         .board {
             width: 100%;
@@ -282,7 +345,7 @@
         .tile-inner {
             width: 100%;
             height: 100%;
-            border-radius: 3cqw;
+            border-radius: 2cqw;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -380,6 +443,17 @@
 
         <div class="game-area">
             <div class="board-col">
+                <div class="score-row">
+                    <div class="score-box">
+                        <span class="score-label">MOVES</span>
+                        <span class="score-value" id="movesDisplay">0</span>
+                    </div>
+                    <div class="score-box">
+                        <span class="score-label">BEST</span>
+                        <span class="score-value" id="bestDisplay">-</span>
+                    </div>
+                </div>
+
                 <div class="board-wrapper">
                     <div class="board" id="board"></div>
                 </div>
@@ -478,10 +552,41 @@
         let tiles = [];
         let emptyPos = { x: 0, y: 0 };
         let isLocked = false;
+        let moves = 0;
+        let bestMoves = Infinity;
+
+        const BEST_KEY = 'brainGames_fifteens_best';
+
+        function loadBestMoves() {
+            try {
+                const v = localStorage.getItem(BEST_KEY);
+                if (v !== null) bestMoves = parseInt(v, 10) || Infinity;
+            } catch (_) { bestMoves = Infinity; }
+            updateBestDisplay();
+        }
+
+        function updateMovesDisplay() {
+            document.getElementById('movesDisplay').innerText = moves;
+        }
+
+        function updateBestDisplay() {
+            const el = document.getElementById('bestDisplay');
+            el.innerText = bestMoves === Infinity ? '-' : bestMoves;
+        }
+
+        function saveBestIfBetter() {
+            if (moves < bestMoves) {
+                bestMoves = moves;
+                updateBestDisplay();
+                try { localStorage.setItem(BEST_KEY, bestMoves); } catch (_) { }
+            }
+        }
 
         function initGame() {
             board.innerHTML = '';
             tiles = [];
+            moves = 0;
+            updateMovesDisplay();
             isLocked = true;
             emptyPos = { x: GRID_SIZE - 1, y: GRID_SIZE - 1 };
 
@@ -576,6 +681,8 @@
                 emptyPos.y = ty;
 
                 updateTilePosition(tileObj);
+                moves++;
+                updateMovesDisplay();
                 checkWin();
             }
         }
@@ -585,16 +692,8 @@
             const isWin = tiles.every(t => t.x === t.correctX && t.y === t.correctY);
             if (isWin) {
                 isLocked = true;
+                saveBestIfBetter();
                 playSound('win');
-
-                const boardEl = document.querySelector('.board-wrapper');
-                const boardSz = boardEl ? boardEl.getBoundingClientRect().width : 400;
-                confetti({
-                    particleCount: Math.round(boardSz * 0.35),
-                    spread: Math.round(boardSz * 0.16),
-                    origin: { y: 0.6 },
-                    colors: ['#06D6A0', '#FFD166', '#EF476F', '#118AB2']
-                });
 
                 showInterstitialAd();
                 setTimeout(() => winModal.classList.add('active'), 800);
@@ -603,7 +702,6 @@
 
         nextLevelBtn.addEventListener('pointerdown', () => {
             winModal.classList.remove('active');
-            confetti.reset();
             setTimeout(initGame, 300);
         });
 
@@ -614,6 +712,7 @@
             initGame();
         });
 
+        loadBestMoves();
         initGame();
 
         function showInterstitialAd() {

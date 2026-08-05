@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Rubik's Cube 3D - Brain Games</title>
+    <title>Rubik's Cube - Brain Games</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
             --bg-color: #F8F9FA;
@@ -24,23 +23,47 @@
             --cube-blue: #74c0fc;
             --cube-inner: #1a1a1a;
 
-            /* fallback */
-            --margin: 16px;
-            --gap: 12px;
-            --header-h: 64px;
-            --board-size: 320px;
-            --btn-size: 44px;
-            --icon-size: 22px;
-            --title-size: 22px;
-            --board-padding: 6px;
-            --board-radius: 20px;
-            --scramble-size: 18px;
-            --scramble-radius: 16px;
-            --modal-padding: 24px;
-            --modal-radius: 18px;
-            --modal-title-size: 24px;
-            --modal-text-size: 16px;
-            --modal-btn-size: 18px;
+            --margin: clamp(8px, 2.5vh, 24px);
+            --gap: clamp(4px, 1.8vh, 16px);
+            --header-h: clamp(32px, 7.5vh, 64px);
+            --score-row-h: clamp(44px, 9vh, 64px);
+            --bottom-row-h: clamp(36px, 7vh, 48px);
+
+            --btn-size: calc(var(--header-h) * 0.68);
+            --icon-size: calc(var(--header-h) * 0.36);
+            --title-size: calc(var(--header-h) * 0.34);
+        }
+
+        @supports (height: 100dvh) {
+            :root {
+                --margin: clamp(8px, 2.5dvh, 24px);
+                --gap: clamp(4px, 1.8dvh, 16px);
+                --header-h: clamp(32px, 7.5dvh, 64px);
+                --score-row-h: clamp(44px, 9dvh, 64px);
+                --bottom-row-h: clamp(36px, 7dvh, 48px);
+            }
+        }
+
+        @media (orientation: landscape) {
+            :root {
+                --margin: clamp(12px, 3.5vh, 32px);
+                --gap: clamp(6px, 3vh, 20px);
+                --header-h: clamp(40px, 12vh, 80px);
+                --score-row-h: clamp(36px, 8vh, 48px);
+                --bottom-row-h: clamp(28px, 6vh, 40px);
+            }
+        }
+
+        @media (orientation: landscape) {
+            @supports (height: 100dvh) {
+                :root {
+                    --margin: clamp(12px, 3.5dvh, 32px);
+                    --gap: clamp(6px, 3dvh, 20px);
+                    --header-h: clamp(40px, 12dvh, 80px);
+                    --score-row-h: clamp(36px, 8dvh, 48px);
+                    --bottom-row-h: clamp(28px, 6dvh, 40px);
+                }
+            }
         }
 
         [data-theme="dark"] {
@@ -51,7 +74,6 @@
             --btn-bg: #2A2A38;
             --btn-shadow: rgba(0, 0, 0, 0.2);
             --primary: #059669;
-
             --cube-white: #e2e8f0;
             --cube-yellow: #d8c67c;
             --cube-red: #d96c6c;
@@ -61,235 +83,175 @@
             --cube-inner: #0f172a;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-touch-callout: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        html, body {
-            width: 100%;
-            height: 100%;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+        html, body { width: 100%; height: 100%; }
 
         body {
-            font-family: 'Nunito', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Nunito', 'Segoe UI', sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             overflow: hidden;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .app-container {
-            position: fixed;
-            inset: 0;
-            padding-top: calc(var(--margin) + env(safe-area-inset-top, 0px));
-            padding-bottom: calc(var(--margin) + env(safe-area-inset-bottom, 0px));
-            padding-left: calc(var(--margin) + env(safe-area-inset-left, 0px));
-            padding-right: calc(var(--margin) + env(safe-area-inset-right, 0px));
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            height: 100vh; height: 100dvh;
+            padding: calc(var(--margin) + env(safe-area-inset-top, 0px))
+                     calc(var(--margin) + env(safe-area-inset-right, 0px))
+                     calc(var(--margin) + env(safe-area-inset-bottom, 0px))
+                     calc(var(--margin) + env(safe-area-inset-left, 0px));
+            display: flex; flex-direction: column; align-items: stretch;
             gap: var(--gap);
         }
 
-        /* Header */
         .header {
-            width: 100%;
-            max-width: calc(var(--board-size) + 2px);
-            height: var(--header-h);
-            flex: 0 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
+            width: 100%; height: var(--header-h); flex: 0 0 auto;
+            display: flex; justify-content: space-between; align-items: center;
             position: relative;
         }
 
-        .back-btn {
-            width: var(--btn-size);
-            height: var(--btn-size);
-            min-width: var(--btn-size);
-            border-radius: 50%;
-            background-color: var(--btn-bg);
+        .back-btn, .theme-toggle {
+            width: var(--btn-size); height: var(--btn-size); min-width: var(--btn-size);
+            border-radius: 50%; background-color: var(--btn-bg);
             box-shadow: 0 4px 12px var(--btn-shadow);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            border: none;
-            outline: none;
-            color: var(--text-color);
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; border: none; outline: none; color: var(--text-color);
             transition: transform 0.1s, background-color 0.3s;
         }
-
-        .back-btn:active { transform: scale(0.9); }
-        .back-btn svg { width: var(--icon-size); height: var(--icon-size); }
+        .back-btn:active, .theme-toggle:active { transform: scale(0.9); }
+        .back-btn svg, .theme-toggle svg { width: var(--icon-size); height: var(--icon-size); }
 
         .header-title {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            max-width: calc(100% - var(--btn-size) * 2 - 40px);
-            font-size: var(--title-size);
-            font-weight: 900;
-            letter-spacing: 2px;
-            line-height: 1;
-            color: var(--text-color);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            pointer-events: none;
+            position: absolute; left: 50%; transform: translateX(-50%);
+            font-size: var(--title-size); font-weight: 900; letter-spacing: 2px;
+            color: var(--text-color); white-space: nowrap; pointer-events: none;
         }
 
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 6px;
+        .header-right { display: flex; align-items: center; gap: 6px; }
+
+        /* Обёртка поле + плашки + кнопка */
+        .board-col {
+            --avail-h: calc(100vh - var(--header-h) - var(--score-row-h) - var(--bottom-row-h)
+                - var(--gap) - var(--gap) - var(--gap) - 2 * var(--margin)
+                - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            --max-w: calc(100vw - 2 * var(--margin)
+                - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+            --board-size: min(var(--max-w), var(--avail-h));
+            display: flex; flex-direction: column; align-items: center;
+            gap: calc(var(--board-size) * 0.0256);
+            align-self: center;
+            flex: 1 1 auto; justify-content: center;
         }
 
-        .theme-toggle {
-            width: var(--btn-size);
-            height: var(--btn-size);
-            min-width: var(--btn-size);
-            border-radius: 50%;
-            background-color: var(--btn-bg);
+        @supports (height: 100dvh) {
+            .board-col {
+                --avail-h: calc(100dvh - var(--header-h) - var(--score-row-h) - var(--bottom-row-h)
+                    - var(--gap) - var(--gap) - var(--gap) - 2 * var(--margin)
+                    - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+                --max-w: calc(100dvw - 2 * var(--margin)
+                    - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+            }
+        }
+
+        /* Плашки TIME / MOVES / BEST */
+        .score-row {
+            width: 100%; display: flex;
+            gap: calc(var(--board-size) * 0.0256);
+        }
+
+        .score-box {
+            flex: 1 1 33.333%;
+            background-color: var(--board-bg);
+            border-radius: calc(var(--board-size) * 0.02);
+            padding: 0 clamp(4px, 1vw, 10px);
+            height: calc(var(--board-size) * 0.15);
+            display: flex; flex-direction: column; justify-content: center;
+            text-align: center;
             box-shadow: 0 4px 12px var(--btn-shadow);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            border: none;
-            outline: none;
-            color: var(--text-color);
-            transition: transform 0.1s, background-color 0.3s;
+            transition: background-color 0.3s;
         }
 
-        .theme-toggle:active { transform: scale(0.9); }
-        .theme-toggle svg { width: var(--icon-size); height: var(--icon-size); color: var(--text-color); }
-
-        /* Game area */
-        .game-area {
-            flex: 1 1 auto;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: var(--gap);
-            min-height: 0;
+        .score-label {
+            display: block;
+            font-size: clamp(7px, calc(var(--board-size) * 0.028), 11px);
+            font-weight: 700; letter-spacing: 1px;
+            color: var(--text-secondary); text-transform: uppercase;
         }
 
-        /* Board */
+        .score-value {
+            display: block;
+            font-size: clamp(10px, calc(var(--board-size) * 0.045), 18px);
+            font-weight: 600; color: var(--text-color); line-height: 1;
+        }
+
+        /* Поле */
         .board-bg {
-            background: var(--board-bg);
-            border-radius: var(--board-radius);
-            padding: var(--board-padding);
+            width: var(--board-size); aspect-ratio: 1 / 1;
+            flex: 0 0 auto; container-type: size;
+            background: var(--board-bg); border-radius: 2cqw;
+            padding: 2cqw;
             box-shadow: 0 8px 24px var(--btn-shadow);
-            width: var(--board-size);
-            height: var(--board-size);
-            flex: 0 0 auto;
         }
 
         .board {
-            width: 100%;
-            height: 100%;
-            border-radius: calc(var(--board-radius) - var(--board-padding));
-            overflow: hidden;
-            position: relative;
-            touch-action: none;
+            width: 100%; height: 100%; overflow: hidden;
+            position: relative; touch-action: none;
         }
+        .board canvas { display: block; width: 100%; height: 100%; }
 
-        .board canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            outline: none;
-        }
+        /* Кнопка Shuffle */
+        .bottom-row { display: flex; align-self: flex-start; }
 
-        /* Scramble button */
-        .scramble-btn {
+        .shuffle-btn {
+            width: calc(var(--board-size) * 0.1);
+            height: calc(var(--board-size) * 0.1);
+            border-radius: calc(var(--board-size) * 0.02);
             background: var(--primary);
             color: white;
-            border: none;
-            padding: var(--scramble-pad-v) var(--scramble-pad-h);
-            font-size: var(--scramble-size);
-            font-weight: 700;
-            font-family: inherit;
-            border-radius: var(--scramble-radius);
-            cursor: pointer;
             box-shadow: 0 4px 12px var(--btn-shadow);
-            transition: transform 0.1s;
-            width: var(--board-size);
-        }
-
-        .scramble-btn:active { transform: scale(0.95); }
-
-        /* Modal */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(5px);
             display: flex;
             justify-content: center;
             align-items: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
-            z-index: 100;
+            cursor: pointer;
+            border: none; outline: none;
+            transition: transform 0.1s;
+        }
+        .shuffle-btn:active { transform: scale(0.9); }
+        .shuffle-btn svg {
+            width: calc(var(--board-size) * 0.05);
+            height: calc(var(--board-size) * 0.05);
         }
 
-        .modal-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
+        /* Модалка */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 100;
         }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
 
         .modal-content {
             background: var(--bg-color);
-            padding: var(--modal-padding);
-            border-radius: var(--modal-radius);
+            padding: calc(var(--board-size) * 0.07);
+            border-radius: calc(var(--board-size) * 0.04);
             text-align: center;
             transform: translateY(50px);
             transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-            max-width: 90%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2); max-width: 90%;
         }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
 
-        .modal-overlay.active .modal-content {
-            transform: translateY(0);
-        }
-
-        .modal-content h2 {
-            font-size: var(--modal-title-size);
-            margin-bottom: 10px;
-            color: var(--text-color);
-        }
-
-        .modal-content p {
-            color: var(--text-secondary);
-            margin-bottom: 25px;
-            font-size: var(--modal-text-size);
-        }
+        .modal-content h2 { font-size: calc(var(--board-size) * 0.07); margin-bottom: 8px; color: var(--text-color); }
+        .modal-content p { color: var(--text-secondary); margin-bottom: 20px; font-size: calc(var(--board-size) * 0.04); }
 
         .play-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: var(--modal-padding) calc(var(--modal-padding) * 2);
-            font-size: var(--modal-btn-size);
-            font-weight: 700;
-            font-family: inherit;
-            border-radius: var(--modal-radius);
-            cursor: pointer;
-            transition: transform 0.1s;
-            width: 100%;
+            background: var(--primary); color: white; border: none;
+            padding: calc(var(--board-size) * 0.04) calc(var(--board-size) * 0.08);
+            font-size: calc(var(--board-size) * 0.042); font-weight: 700;
+            font-family: inherit; border-radius: calc(var(--board-size) * 0.04);
+            cursor: pointer; width: 100%; transition: transform 0.1s;
         }
-
         .play-btn:active { transform: scale(0.95); }
     </style>
 </head>
@@ -309,12 +271,33 @@
         </div>
     </div>
 
-    <div class="game-area">
+    <div class="board-col">
+
+        <div class="score-row">
+            <div class="score-box">
+                <span class="score-label">TIME</span>
+                <span class="score-value" id="timeDisplay">00:00</span>
+            </div>
+            <div class="score-box">
+                <span class="score-label">MOVES</span>
+                <span class="score-value" id="movesDisplay">0</span>
+            </div>
+            <div class="score-box">
+                <span class="score-label">BEST</span>
+                <span class="score-value" id="bestDisplay">-</span>
+            </div>
+        </div>
+
         <div class="board-bg">
             <div class="board" id="board"></div>
         </div>
 
-        <button class="scramble-btn" id="scrambleBtn">Scramble</button>
+        <div class="bottom-row">
+            <button class="shuffle-btn" id="shuffleBtn" title="Shuffle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M 20.3 13.43 a 1 1 0 0 0 -1.25 0.65 A 7.14 7.14 0 0 1 12.18 19 A 7.1 7.1 0 0 1 5 12 a 7.1 7.1 0 0 1 7.18 -7 a 7.26 7.26 0 0 1 4.65 1.67 l -2.17 -0.36 a 1 1 0 0 0 -1.15 0.83 a 1 1 0 0 0 0.83 1.15 l 4.24 0.7 h 0.17 a 1 1 0 0 0 0.34 -0.06 a 0.33 0.33 0 0 0 0.1 -0.06 a 0.78 0.78 0 0 0 0.2 -0.11 l 0.09 -0.11 c 0 -0.05 0.09 -0.09 0.13 -0.15 s 0 -0.1 0.05 -0.14 a 1.34 1.34 0 0 0 0.07 -0.18 l 0.75 -4 a 1 1 0 0 0 -2 -0.38 l -0.27 1.45 A 9.21 9.21 0 0 0 12.18 3 A 9.1 9.1 0 0 0 3 12 a 9.1 9.1 0 0 0 9.18 9 A 9.12 9.12 0 0 0 21 14.68 A 1 1 0 0 0 20.3 13.43 Z"/></svg>
+            </button>
+        </div>
+
     </div>
 </div>
 
@@ -328,102 +311,64 @@
 
 <script>
     // ================================================================
-    // АДАПТИВНАЯ ВЁРСТКА
+    // ПЕРЕМЕННЫЕ
     // ================================================================
-    let scene, camera, renderer; // объявлены здесь, чтобы updateRendererSize не падал
-    let materials = []; // здесь же, чтобы updateCubeColors не падал
+    let scene, camera, renderer;
+    let materials = [];
+    const board = document.getElementById('board');
+    let cubeGroup;
+    const cubies = [];
 
-    const LAYOUT_CFG = {
-        portrait: {
-            marginRatio: 0.025,
-            gapRatio: 0.018,
-            headerRatio: 0.075,
-            headerMinRatio: 0.05, headerMaxRatio: 0.10,
-        },
-        landscape: {
-            marginRatio: 0.035,
-            gapRatio: 0.03,
-            headerRatio: 0.12,
-            headerMinRatio: 0.06, headerMaxRatio: 0.14,
-        }
-    };
+    // Ходы / таймер / рекорд
+    let moves = 0;
+    let timerSec = 0;
+    let timerInterval = null;
+    let bestTime = Infinity;
+    let isGameActive = false;
+    const BEST_KEY = 'brainGames_rubik_best';
 
-    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
-
-    let safeInsetsCache = { top: 0, bottom: 0, left: 0, right: 0 };
-    (function measureSafeInsets() {
-        const probe = document.createElement('div');
-        probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;' +
-            'padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);' +
-            'padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);' +
-            'visibility:hidden;';
-        document.body.appendChild(probe);
-        const cs = getComputedStyle(probe);
-        safeInsetsCache = {
-            top: parseFloat(cs.paddingTop) || 0,
-            bottom: parseFloat(cs.paddingBottom) || 0,
-            left: parseFloat(cs.paddingLeft) || 0,
-            right: parseFloat(cs.paddingRight) || 0
-        };
-        probe.remove();
-    })();
-
-    function calcLayout() {
-        const insets = safeInsetsCache;
-        const availW = window.innerWidth - insets.left - insets.right;
-        const availH = window.innerHeight - insets.top - insets.bottom;
-        const isPortrait = availH >= availW;
-        const cfg = isPortrait ? LAYOUT_CFG.portrait : LAYOUT_CFG.landscape;
-
-        const margin = Math.round(availH * cfg.marginRatio);
-        const gap = Math.round(availH * cfg.gapRatio);
-        const headerH = Math.round(clamp(availH * cfg.headerRatio, availH * cfg.headerMinRatio, availH * cfg.headerMaxRatio));
-
-        // scramble button height ~ headerH * 0.5
-        const btnH = Math.round(headerH * 0.5);
-        const usableH = availH - margin * 2 - headerH - btnH - gap * 2;
-        const usableW = availW - margin * 2;
-        const boardSize = Math.max(180, Math.floor(Math.min(usableH, usableW)));
-
-        return { margin, gap, headerH, boardSize };
+    function loadBest() {
+        try {
+            const v = localStorage.getItem(BEST_KEY);
+            if (v !== null) bestTime = parseInt(v, 10) || Infinity;
+        } catch (_) { bestTime = Infinity; }
+        document.getElementById('bestDisplay').innerText = bestTime === Infinity ? '-' : fmtTime(bestTime);
     }
 
-    let currentLayout = null;
-
-    function applyLayout() {
-        const L = calcLayout();
-        currentLayout = L;
-        const root = document.documentElement;
-
-        root.style.setProperty('--margin', L.margin + 'px');
-        root.style.setProperty('--gap', L.gap + 'px');
-        root.style.setProperty('--header-h', L.headerH + 'px');
-        root.style.setProperty('--board-size', L.boardSize + 'px');
-
-        root.style.setProperty('--btn-size', Math.round(L.headerH * 0.68) + 'px');
-        root.style.setProperty('--icon-size', Math.round(L.headerH * 0.36) + 'px');
-        root.style.setProperty('--title-size', Math.round(L.headerH * 0.34) + 'px');
-
-        root.style.setProperty('--board-padding', Math.round(L.boardSize * 0.02) + 'px');
-        root.style.setProperty('--board-radius', Math.round(L.boardSize * 0.06) + 'px');
-
-        root.style.setProperty('--scramble-pad-v', Math.round(L.headerH * 0.2) + 'px');
-        root.style.setProperty('--scramble-pad-h', Math.round(L.headerH * 0.4) + 'px');
-        root.style.setProperty('--scramble-size', Math.round(L.headerH * 0.32) + 'px');
-        root.style.setProperty('--scramble-radius', Math.round(L.headerH * 0.35) + 'px');
-
-        root.style.setProperty('--modal-padding', Math.round(L.boardSize * 0.07) + 'px');
-        root.style.setProperty('--modal-radius', Math.round(L.boardSize * 0.05) + 'px');
-        root.style.setProperty('--modal-title-size', Math.round(L.boardSize * 0.065) + 'px');
-        root.style.setProperty('--modal-text-size', Math.round(L.boardSize * 0.04) + 'px');
-        root.style.setProperty('--modal-btn-size', Math.round(L.boardSize * 0.042) + 'px');
-
-        // Обновляем Three.js рендерер
-        updateRendererSize();
+    function fmtTime(s) {
+        const m = Math.floor(s / 60);
+        const sec = s % 60;
+        return String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
     }
 
-    applyLayout();
-    window.addEventListener('resize', applyLayout);
+    function updateTimeDisplay() {
+        document.getElementById('timeDisplay').innerText = fmtTime(timerSec);
+    }
+
+    function updateMovesDisplay() {
+        document.getElementById('movesDisplay').innerText = moves;
+    }
+
+    function startTimer() {
+        if (timerInterval) return;
+        timerInterval = setInterval(() => {
+            timerSec++;
+            updateTimeDisplay();
+        }, 1000);
+    }
+
+    function stopTimer() {
+        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    }
+
+    function resetStats() {
+        stopTimer();
+        moves = 0; timerSec = 0;
+        updateMovesDisplay();
+        updateTimeDisplay();
+    }
+
+    loadBest();
 
     // ================================================================
     // ТЕМЫ
@@ -497,9 +442,6 @@
     // ================================================================
     // THREE.JS: КУБИК РУБИКА
     // ================================================================
-    const board = document.getElementById('board');
-    let cubeGroup;
-    const cubies = [];
 
     const getColors = () => {
         const style = getComputedStyle(document.body);
@@ -523,6 +465,12 @@
         camera.updateProjectionMatrix();
         renderer.setSize(w, h);
     }
+
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(updateRendererSize, 150);
+    });
 
     function init3D() {
         scene = new THREE.Scene();
@@ -620,7 +568,6 @@
     let dragStartPoint = { x: 0, y: 0 };
     let intersectStart = null;
     let isAnimating = false;
-    let isGameActive = false;
 
     function setupControls() {
         board.addEventListener('pointerdown', onPointerDown);
@@ -705,7 +652,12 @@
     function rotateLayer(axis, point, angle, duration = 300, isScrambling = false) {
         return new Promise(resolve => {
             isAnimating = true;
-            if (!isScrambling) playSound('click');
+            if (!isScrambling) {
+                playSound('click');
+                moves++;
+                updateMovesDisplay();
+                startTimer();
+            }
 
             const activeCubies = [];
             const epsilon = 0.5;
@@ -770,27 +722,30 @@
         if (!isGameActive) return;
         if (isSolved()) {
             isGameActive = false;
+            stopTimer();
             playSound('win');
-            const boardSz = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--board-size')) || 400;
-            confetti({
-                particleCount: Math.round(boardSz * 0.35),
-                spread: Math.round(boardSz * 0.16),
-                origin: { y: 0.6 },
-                colors: ['#06D6A0', '#FFD166', '#EF476F', '#118AB2']
-            });
+
+            if (timerSec < bestTime) {
+                bestTime = timerSec;
+                try { localStorage.setItem(BEST_KEY, bestTime); } catch (_) { }
+                document.getElementById('bestDisplay').innerText = fmtTime(bestTime);
+            }
+
+            document.getElementById('modalDesc').innerText =
+                'Solved in ' + fmtTime(timerSec) + ' — ' + moves + ' moves';
             setTimeout(() => {
                 showInterstitialAd();
                 document.getElementById('winOverlay').classList.add('active');
-            }, 800);
+            }, 600);
         }
     }
 
-    document.getElementById('scrambleBtn').addEventListener('pointerdown', async () => {
+    async function doShuffle() {
         if (isAnimating) return;
         initAudio();
+        resetStats();
         isGameActive = true;
         document.getElementById('winOverlay').classList.remove('active');
-        confetti.reset();
 
         const axes = [
             { axis: new THREE.Vector3(1, 0, 0), points: [new THREE.Vector3(-1,0,0), new THREE.Vector3(0,0,0), new THREE.Vector3(1,0,0)], angles: [-1, 1] },
@@ -798,22 +753,27 @@
             { axis: new THREE.Vector3(0, 0, 1), points: [new THREE.Vector3(0,0,-1), new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,1)], angles: [-1, 1] },
         ];
 
+        // Гарантированная сложность: 20 случайных поворотов
         for (let i = 0; i < 20; i++) {
             const randAxis = axes[Math.floor(Math.random() * axes.length)];
             const point = randAxis.points[Math.floor(Math.random() * randAxis.points.length)];
             const angle = randAxis.angles[Math.floor(Math.random() * randAxis.angles.length)] * Math.PI / 2;
-            await rotateLayer(randAxis.axis, point, angle, 80, true);
+            await rotateLayer(randAxis.axis, point, angle, 60, true);
         }
-    });
+    }
+
+    document.getElementById('shuffleBtn').addEventListener('pointerdown', doShuffle);
 
     document.getElementById('playAgainBtn').addEventListener('pointerdown', () => {
         document.getElementById('winOverlay').classList.remove('active');
-        confetti.reset();
-        document.getElementById('scrambleBtn').click();
+        doShuffle();
     });
 
-    // Даём браузеру выполнить layout, затем запускаем 3D
-    requestAnimationFrame(() => init3D());
+    // Авто-перемешка при старте
+    requestAnimationFrame(() => {
+        init3D();
+        setTimeout(() => doShuffle(), 500);
+    });
 
     function showInterstitialAd() {
         let payload = { action: "showInterstitial" };

@@ -29,6 +29,8 @@
             --margin: clamp(8px, 2.5vh, 24px);
             --gap: clamp(4px, 1.8vh, 16px);
             --header-h: clamp(32px, 7.5vh, 64px);
+            --score-row-h: clamp(44px, 9vh, 64px);
+            --bottom-row-h: clamp(40px, 8vh, 56px);
 
             /* Производные от высоты шапки */
             --btn-size: calc(var(--header-h) * 0.68);
@@ -88,6 +90,8 @@
                 --margin: clamp(12px, 3.5vh, 32px);
                 --gap: clamp(6px, 3vh, 20px);
                 --header-h: clamp(40px, 12vh, 80px);
+                --score-row-h: clamp(36px, 9vh, 52px);
+                --bottom-row-h: clamp(32px, 8vh, 48px);
             }
         }
 
@@ -97,6 +101,8 @@
                     --margin: clamp(12px, 3.5dvh, 32px);
                     --gap: clamp(6px, 3dvh, 20px);
                     --header-h: clamp(40px, 12dvh, 80px);
+                    --score-row-h: clamp(36px, 9dvh, 52px);
+                    --bottom-row-h: clamp(32px, 8dvh, 48px);
                 }
             }
         }
@@ -257,15 +263,112 @@
             color: var(--text-color);
         }
 
+        /* Обёртка «поле + плашки + кнопки» — как в fifteens */
+        .board-col {
+            --avail-h: calc(100vh - var(--header-h) - var(--score-row-h) - var(--bottom-row-h)
+                - var(--gap) - var(--gap) - var(--gap) - 2 * var(--margin)
+                - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            --max-w: calc(100vw - 2 * var(--margin)
+                - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+            --board-size: min(var(--max-w), var(--avail-h));
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: calc(var(--board-size) * 0.0256);
+            align-self: center;
+            flex: 1 1 auto;
+            justify-content: center;
+        }
+
+        @supports (height: 100dvh) {
+            .board-col {
+                --avail-h: calc(100dvh - var(--header-h) - var(--score-row-h) - var(--bottom-row-h)
+                    - var(--gap) - var(--gap) - var(--gap) - 2 * var(--margin)
+                    - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+                --max-w: calc(100dvw - 2 * var(--margin)
+                    - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+            }
+        }
+
+        /* Плашки SCORE / BEST */
+        .score-row {
+            width: 100%;
+            display: flex;
+            gap: calc(var(--board-size) * 0.0256);
+        }
+
+        .score-box {
+            flex: 1 1 50%;
+            background-color: var(--board-bg);
+            border-radius: calc(var(--board-size) * 0.02);
+            padding: 0 clamp(8px, 2vw, 16px);
+            height: calc(var(--board-size) * 0.15);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 4px 12px var(--btn-shadow);
+            transition: background-color 0.3s;
+        }
+
+        .score-label {
+            display: block;
+            font-size: clamp(1px, calc(var(--board-size) * 0.032), 13px);
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .score-value {
+            display: block;
+            font-size: clamp(1px, calc(var(--board-size) * 0.05), 20px);
+            font-weight: 600;
+            color: var(--text-color);
+            line-height: 1;
+        }
+
+        /* Кнопки снизу */
+        .bottom-row {
+            display: flex;
+        }
+
+        .undo-btn {
+            width: var(--btn-size);
+            height: var(--btn-size);
+            border-radius: 50%;
+            background-color: var(--btn-bg);
+            box-shadow: 0 4px 12px var(--btn-shadow);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            border: none;
+            outline: none;
+            color: var(--text-color);
+            transition: transform 0.1s, opacity 0.2s, background-color 0.3s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .undo-btn:active:not(:disabled) {
+            transform: scale(0.9);
+        }
+
+        .undo-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        .undo-btn svg {
+            width: var(--icon-size);
+            height: var(--icon-size);
+        }
+
         /* Игровое поле — квадратное, центрированное, размер через min() */
         .board-bg {
-            --avail-h: calc(100vh - var(--header-h) - var(--gap) - 2 * var(--margin)
-                - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-            width: min(100%, var(--avail-h));
+            width: var(--board-size);
             aspect-ratio: 1 / 1;
             flex: 0 0 auto;
-            align-self: center;
-            margin: auto 0;
             container-type: size;
             background-color: var(--board-bg);
             border-radius: 2cqw;
@@ -273,13 +376,6 @@
             position: relative;
             box-shadow: 0 8px 24px var(--btn-shadow);
             transition: background-color 0.3s;
-        }
-
-        @supports (height: 100dvh) {
-            .board-bg {
-                --avail-h: calc(100dvh - var(--header-h) - var(--gap) - 2 * var(--margin)
-                    - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-            }
         }
 
         .board-grid {
@@ -329,19 +425,8 @@
             animation: appear 0.2s ease-out forwards;
         }
 
-        /* Анимация слияния */
-        .tile.merged {
-            animation: pop 0.2s ease-out forwards;
-        }
-
         @keyframes appear {
             0% { transform: scale(0); }
-            100% { transform: scale(1); }
-        }
-
-        @keyframes pop {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
             100% { transform: scale(1); }
         }
 
@@ -502,38 +587,64 @@
             </div>
         </div>
 
-        <!-- Игровое поле -->
-        <div class="board-bg" id="touchArea">
-            <div class="board-grid">
-                <!-- 16 пустых ячеек подложки -->
-                <div class="grid-cell"></div>
-                <div class="grid-cell"></div>
-                <div class="grid-cell"></div>
-                <div class="grid-cell"></div>
-                <div class="grid-cell"></div>
-                <div class="grid-cell"></div>
-                <div class="grid-cell"></div>
-                <div class="grid-cell"></div>
-                <div class="grid-cell"></div>
-                <div class="grid-cell"></div>
-                <div class="grid-cell"></div>
-                <div class="grid-cell"></div>
-                <div class="grid-cell"></div>
-                <div class="grid-cell"></div>
-                <div class="grid-cell"></div>
-                <div class="grid-cell"></div>
+        <!-- Поле + плашки + кнопки — обёртка как в fifteens -->
+        <div class="board-col">
+
+            <!-- Плашки SCORE / BEST — ровно над полем, каждая 50% ширины -->
+            <div class="score-row">
+                <div class="score-box">
+                    <span class="score-label">SCORE</span>
+                    <span class="score-value" id="scoreDisplay">0</span>
+                </div>
+                <div class="score-box">
+                    <span class="score-label">BEST</span>
+                    <span class="score-value" id="bestDisplay">0</span>
+                </div>
             </div>
-            <!-- Слой для динамических плиток -->
-            <div class="tile-container" id="tileContainer"></div>
+
+            <div class="board-bg" id="touchArea">
+                <div class="board-grid">
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                </div>
+                <!-- Слой для динамических плиток -->
+                <div class="tile-container" id="tileContainer"></div>
+            </div>
+
+            <!-- Кнопка отмены хода (слева под полем) -->
+            <div class="bottom-row">
+                <button class="undo-btn" id="undoBtn" onclick="undoMove()" disabled title="Отменить ход">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="1 4 1 10 7 10"></polyline>
+                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                    </svg>
+                </button>
+            </div>
+
         </div>
     </div>
 
     <!-- Модальное окно поражения/победы -->
     <div class="overlay" id="modalOverlay">
         <div class="modal">
-            <h2 id="modalTitle">Поражение!</h2>
-            <p id="modalDesc">Ходов больше нет.</p>
-            <button class="btn" onclick="restartGame()">ИГРАТЬ ЕЩЕ</button>
+            <h2 id="modalTitle">You Lost</h2>
+            <p id="modalDesc"></p>
+            <button class="btn" onclick="restartGame()">RESTART</button>
         </div>
     </div>
 
@@ -541,8 +652,6 @@
         function sendToUnity(message) {
             Unity.call(message);
         }
-
-
         // --- АУДИО ДВИЖОК (Web Audio API) ---
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         let audioCtx;
@@ -616,6 +725,7 @@
         }
 
         function goBack() {
+            showInterstitialAd();
             closeGame();
         }
 
@@ -644,15 +754,50 @@
         // --- ЛОГИКА ИГРЫ 2048 ---
         const SIZE = 4;
         let board = [];
-        let score = 0; // Очки закомментированы
+        let score = 0;
+        let bestScore = 0;
         let hasWon = false;
         let isAnimating = false;
         let tileIdCounter = 0;
+        let undoUsed = false;
+        let history = null; // { board, score } — состояние до последнего хода
 
-        // Расчет процентов для позиционирования плиток:
-        // Размер ячейки 23%, отступ 2.666%
-        function getPos(index) {
-            return (index * (23 + 2.666)) + '%';
+        const BEST_KEY = 'brainGames_2048_best';
+
+        function loadBestScore() {
+            try {
+                const v = localStorage.getItem(BEST_KEY);
+                if (v !== null) bestScore = parseInt(v, 10) || 0;
+            } catch (_) { bestScore = 0; }
+            document.getElementById('bestDisplay').innerText = bestScore;
+        }
+
+        function updateScore() {
+            document.getElementById('scoreDisplay').innerText = score;
+            if (score > bestScore) {
+                bestScore = score;
+                document.getElementById('bestDisplay').innerText = bestScore;
+                try { localStorage.setItem(BEST_KEY, bestScore); } catch (_) { }
+            }
+        }
+
+        // Читаем реальные позиции grid-ячеек из DOM (через getBoundingClientRect)
+        // так позиции плиток гарантированно совпадают с сеткой при любом масштабе
+        function getCellRects() {
+            const container = document.getElementById('tileContainer');
+            const gridCells = document.querySelectorAll('.board-grid .grid-cell');
+            const containerRect = container.getBoundingClientRect();
+            const rects = [];
+            for (let i = 0; i < gridCells.length; i++) {
+                const cr = gridCells[i].getBoundingClientRect();
+                rects.push({
+                    top: cr.top - containerRect.top,
+                    left: cr.left - containerRect.left,
+                    width: cr.width,
+                    height: cr.height
+                });
+            }
+            return rects; // 16 элементов, row-major
         }
 
         function initBoard() {
@@ -665,7 +810,10 @@
             }
             score = 0;
             hasWon = false;
-            // updateScore(); // Очки закомментированы
+            undoUsed = false;
+            history = null;
+            updateScore();
+            document.getElementById('undoBtn').disabled = true;
             document.getElementById('tileContainer').innerHTML = '';
             addRandomTile();
             addRandomTile();
@@ -695,6 +843,7 @@
 
         function renderBoard() {
             const container = document.getElementById('tileContainer');
+            const rects = getCellRects();
 
             // Отрисовываем текущее состояние
             for (let r = 0; r < SIZE; r++) {
@@ -702,6 +851,8 @@
                     let tile = board[r][c];
                     if (tile) {
                         let el = document.getElementById('tile-' + tile.id);
+                        const idx = r * SIZE + c;
+                        const cell = rects[idx];
                         if (!el) {
                             // Создаем новую плитку
                             el = document.createElement('div');
@@ -710,6 +861,8 @@
                             if (tile.isNew) el.classList.add('new');
                             if (tile.isMerged) el.classList.add('merged');
                             el.innerText = tile.val;
+                            el.style.width = cell.width + 'px';
+                            el.style.height = cell.height + 'px';
                             container.appendChild(el);
 
                             // Сброс флагов анимации для следующих кадров
@@ -717,29 +870,26 @@
                             tile.isMerged = false;
                         } else {
                             // Обновляем позицию, значение и цвет существующей
-                            el.className = `tile t-${tile.val > 2048 ? 'super' : tile.val}`;
                             if (tile.isMerged) {
-                                el.classList.add('merged');
+                                // При слиянии: только двигаем, цвет/значение — после анимации
                                 tile.isMerged = false;
+                                el.classList.remove('new');
                             } else {
+                                el.className = `tile t-${tile.val > 2048 ? 'super' : tile.val}`;
                                 el.classList.remove('merged', 'new');
+                                el.innerText = tile.val;
                             }
-                            el.innerText = tile.val;
+                            el.style.width = cell.width + 'px';
+                            el.style.height = cell.height + 'px';
                         }
 
-                        // Позиция
-                        el.style.top = getPos(r);
-                        el.style.left = getPos(c);
+                        // Позиция — точные координаты grid-ячейки
+                        el.style.top = cell.top + 'px';
+                        el.style.left = cell.left + 'px';
                     }
                 }
             }
         }
-
-        /* Очки закомментированы
-        function updateScore() {
-            document.getElementById('scoreDisplay').innerText = score;
-        }
-        */
 
         function slide(row) {
             // Удаляем null
@@ -750,7 +900,7 @@
             for (let i = 0; i < arr.length - 1; i++) {
                 if (arr[i].val === arr[i + 1].val) {
                     arr[i].val *= 2;
-                    // score += arr[i].val; // Очки закомментированы
+                    score += arr[i].val;
                     arr[i].isMerged = true;
 
                     // Сохраняем id удаляемой плитки и к какой она присоединяется
@@ -774,6 +924,10 @@
         function move(direction) {
             if (isAnimating) return;
             initAudio();
+
+            // Снимок до хода — для отмены
+            const prevBoard = JSON.parse(JSON.stringify(board));
+            const prevScore = score;
 
             let hasMoved = false;
             let hasMerged = false;
@@ -823,15 +977,26 @@
             }
 
             if (hasMoved || hasMerged) {
+                // Сохраняем историю для отмены (один раз за игру)
+                history = { board: prevBoard, score: prevScore };
+                if (!undoUsed) {
+                    document.getElementById('undoBtn').disabled = false;
+                }
+
                 isAnimating = true;
-                // updateScore(); // Очки закомментированы
+                updateScore();
 
                 // Анимируем удаляемые плитки к их новой позиции
+                const rects = getCellRects();
                 allRemovedTiles.forEach(rt => {
                     let el = document.getElementById('tile-' + rt.removedId);
                     if (el) {
-                        el.style.top = getPos(rt.r);
-                        el.style.left = getPos(rt.c);
+                        const idx = rt.r * SIZE + rt.c;
+                        const cell = rects[idx];
+                        el.style.top = cell.top + 'px';
+                        el.style.left = cell.left + 'px';
+                        el.style.width = cell.width + 'px';
+                        el.style.height = cell.height + 'px';
                         el.classList.add('to-remove');
                         el.style.zIndex = '0'; // Прячем под основную плитку
                     }
@@ -868,7 +1033,7 @@
                 }
             }
             showInterstitialAd();
-            showModal("Поражение!", "");
+            showModal("You Lost", "");
         }
 
         function triggerWin() {
@@ -884,8 +1049,8 @@
             });
             setTimeout(() => {
                 showInterstitialAd();
-                showModal("Победа!", ""); // Очки закомментированы
             }, 1000);
+            showModal("You Win!", "");
         }
 
         function showModal(title, desc) {
@@ -898,6 +1063,36 @@
             document.getElementById('modalOverlay').classList.remove('active');
             initAudio();
             initBoard();
+        }
+
+        function undoMove() {
+            if (isAnimating || undoUsed || !history) return;
+            initAudio();
+
+            // Восстанавливаем доску и счёт
+            board = history.board;
+            score = history.score;
+            undoUsed = true;
+            history = null;
+
+            document.getElementById('undoBtn').disabled = true;
+            updateScore();
+
+            // Пересоздаём все плитки заново
+            const container = document.getElementById('tileContainer');
+            container.innerHTML = '';
+            tileIdCounter = 0;
+            // Переназначаем id чтобы избежать конфликтов
+            for (let r = 0; r < SIZE; r++) {
+                for (let c = 0; c < SIZE; c++) {
+                    if (board[r][c]) {
+                        board[r][c].id = tileIdCounter++;
+                        board[r][c].isNew = false;
+                        board[r][c].isMerged = false;
+                    }
+                }
+            }
+            renderBoard();
         }
 
         // --- УПРАВЛЕНИЕ (Клавиатура и Свайпы) ---
@@ -944,7 +1139,19 @@
             }
         }, { passive: false });
 
-        window.onload = initBoard;
+        // Перерасчёт плиток при ресайзе / повороте
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                if (!isAnimating) renderBoard();
+            }, 150);
+        });
+
+        window.onload = () => {
+            loadBestScore();
+            initBoard();
+        };
 
     </script>
 </body>
